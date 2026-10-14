@@ -1,0 +1,24 @@
+# Installed packages
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Test and coverage output
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Secrets and local settings (API keys live here, never in git)
+.env
+.env.*
+!.env.example
+
+# Editor and system files
+.DS_Store
+.vscode/
+.idea/
+*.swp
