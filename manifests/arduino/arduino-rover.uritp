@@ -1,0 +1,10 @@
+# Company: Arduino
+# Reference manifest for a small wheeled rover driven by an Arduino board, run in simulator mode only.
+# Written from public documentation. Values are illustrative: replace with datasheet values
+# for your own motors, wheels and sensor before using it with a real robot. Not tested on real hardware.
+manifest "Arduino rover (reference, simulated)":
+    uritp 0.1
+    frame base: pose2d max_speed 0.3m/s payload 0.5kg
+    sensor distance_front: ultrasonic dimension Length
+    profiles [core, navigation]
+    safety max_speed 0.2m/s

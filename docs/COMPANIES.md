@@ -29,7 +29,7 @@ updated in the same commit as any change to company code.
 |---|---|---|---|---|---|
 | Universal Robots | Industrial arm (manipulation) | `drivers/universal-robots/` | `manifests/universal-robots/` | URScript-style text | Manifest done; driver in Phase 6 |
 | Raspberry Pi | Rover or robot built on a Pi (navigation, vision) | `drivers/raspberry-pi/` | `manifests/raspberry-pi/` | Command messages for a motor and camera service | Manifest done; driver in Phase 6 |
-| Arduino | Small microcontroller rover (core and navigation only) | `drivers/arduino/` | `manifests/arduino/` | Simple serial text protocol | Not started (Phase 6) |
+| Arduino | Small microcontroller rover (core and navigation only) | `drivers/arduino/` | `manifests/arduino/` | Simple serial text protocol | Manifest done; driver in Phase 6 |
 
 Each company's section below lists its files, its manifest, how its commits
 are worded, and what is real versus simulated.
@@ -66,3 +66,19 @@ are worded, and what is real versus simulated.
 - **Real versus simulated:** everything is simulated. A Pi rover is built
   from parts its maker chooses, so the values are illustrative and marked
   "replace with datasheet values".
+
+## Arduino
+
+- **Folders:** `manifests/arduino/` (driver in `drivers/arduino/` from Phase 6).
+- **Files:**
+  - `arduino-rover.uritp`: the rover's manifest.
+  - `README.md`: what each value means and where it comes from.
+  - `manifest.test.ts`: checks the manifest and that programs are accepted or rejected against it.
+- **Manifest:** one `base` frame (pose2d, max_speed 0.3m/s, payload 0.5kg),
+  a `distance_front` sensor (Length), profiles `[core, navigation]` only, and
+  `safety max_speed 0.2m/s`.
+- **Commits are worded** with the company name in the sentence, for example
+  "Added a reference rover manifest for Arduino".
+- **Real versus simulated:** everything is simulated. An Arduino rover is
+  built from parts its maker chooses, so the values are illustrative and
+  marked "replace with datasheet values".
