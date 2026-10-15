@@ -128,7 +128,7 @@ are worded, and what is real versus simulated.
   - `drivers/arduino/serial-protocol.ts`: the serial lines and whole-number conversions.
   - `drivers/arduino/README.md`: the protocol, and what it refuses.
   - `drivers/arduino/index.ts`: the entry point the command line and conformance tests use to create the driver.
-  - `drivers/arduino/arduino-driver.test.ts`: the driver's tests.
+  - `drivers/arduino/arduino-driver.test.ts`: the driver's tests, including running `examples/try-small-rover/drive_until_close.uritp` through the command line.
 - **Driver:** each instruction becomes short serial lines in whole
   millimetres and hundredths of a degree: `F 500 100`, `L 9000 2865`,
   `Q DF`. A move to a pose is turn, drive straight, turn. STOP sends `S`.

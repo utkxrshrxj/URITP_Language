@@ -1,8 +1,10 @@
 // Company: Arduino
-// Tests the simulated Arduino rover driver: its serial text lines, refusals, STOP, and a whole
-// "drive until close" program run from its manifest.
+// Tests the simulated Arduino rover driver: its serial text lines, refusals, STOP, a whole
+// "drive until close" program run from its manifest, and the small rover program run through the command line.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { parseArgs } from "../../src/cli/args.js";
+import { runCli } from "../../src/cli/cli.js";
 import { checkManifest } from "../../src/checker/manifest.js";
 import { instruction, num, word } from "../../src/codegen/instruction.js";
 import { realClock } from "../../src/runtime/clock.js";
@@ -100,5 +102,28 @@ describe("Arduino rover driver", () => {
 
   it("is created through its folder's entry point, as tools find it", () => {
     expect(createDriver({ model })).toBeInstanceOf(ArduinoDriver);
+  });
+});
+
+describe("the command line", () => {
+  it("runs examples/try-small-rover/drive_until_close.uritp on this driver", async () => {
+    const printed: string[] = [];
+    const code = await runCli(parseArgs(["run", "examples/try-small-rover/drive_until_close.uritp", "--robot", "manifests/arduino/arduino-rover.uritp", "--protocol"]), {
+      print: (text) => printed.push(text),
+      readFile: (path) => {
+        try {
+          return readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
+        } catch {
+          return null;
+        }
+      },
+      loadDriver: async (folder) => (folder === "arduino" ? createDriver : null),
+      clock: (speed) => realClock({ speed: speed * 1000 }),
+    });
+    const output = printed.join("\n");
+    expect(code).toBe(0);
+    expect(output).toContain("The program ended: succeeded.");
+    expect(output).toContain("  F 50 100");
+    expect(output).toContain("  L 18000 2865");
   });
 });
