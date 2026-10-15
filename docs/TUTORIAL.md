@@ -136,17 +136,17 @@ npm run uritp -- run docs/tutorial/02-hello.uritp --robot manifests/raspberry-pi
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- DRIVE frame=base distance=0.5
-         succeeded
+rover -> succeeded
 rover <- TURN frame=base angle=1.57079632679
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 ```
 
 Each `rover <- ...` line is one **instruction** sent to the robot, and the
-line under it says how it ended. Notice the numbers: `distance=0.5` is 0.5
-metres, and `angle=1.57079632679` is 90 degrees in radians. Robots always
-receive standard units, so no robot ever has to convert anything (chapter 3
-says more).
+`rover -> ...` line after it says how it ended. Notice the numbers:
+`distance=0.5` is 0.5 metres, and `angle=1.57079632679` is 90 degrees in
+radians. Robots always receive standard units, so no robot ever has to
+convert anything (chapter 3 says more).
 
 ### 2.1 What the robot itself receives
 
@@ -161,9 +161,9 @@ npm run uritp -- run docs/tutorial/02-hello.uritp --robot manifests/raspberry-pi
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- DRIVE frame=base distance=0.5
-         succeeded
+rover -> succeeded
 rover <- TURN frame=base angle=1.57079632679
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 Lines the rover driver would send (simulator only, not tested on real hardware):
   {"service":"motors","command":"drive","distance":0.5}
@@ -220,9 +220,9 @@ npm run uritp -- run docs/tutorial/03-values.uritp --robot manifests/raspberry-p
 Simulated robots only. Nothing is sent to real hardware.
 log: one step is 20.5cm
 rover <- DRIVE frame=base distance=0.205 speed=0.1
-         succeeded
+rover -> succeeded
 rover <- DRIVE frame=base distance=-0.205 speed=0.1
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 ```
 
@@ -390,11 +390,11 @@ npm run uritp -- run docs/tutorial/04-places.uritp --robot manifests/raspberry-p
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- MOVE frame=base target=pose(4,1,0,0,0,0)
-         succeeded
+rover -> succeeded
 rover <- MOVE frame=base target=pose(2,3,0,0,0,0) speed=0.25
-         succeeded
+rover -> succeeded
 rover <- MOVE frame=base target=pose(0,0,0,0,0,0)
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 ```
 
@@ -443,7 +443,7 @@ npm run uritp -- run docs/tutorial/04-avoid.uritp --robot manifests/raspberry-pi
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- MOVE frame=base target=pose(4,1,0,0,0,0) avoid=[polygon((8,0),(10,0),(10,2),(8,2))]
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 ```
 
@@ -480,10 +480,10 @@ npm run uritp -- run docs/tutorial/05-decisions.uritp --robot manifests/raspberr
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- SENSE sensor=distance_front
-         succeeded
+rover -> succeeded
 log: the nearest thing in front is 2m away
 rover <- DRIVE frame=base distance=0.5
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 ```
 
@@ -531,21 +531,21 @@ npm run uritp -- run docs/tutorial/06-square.uritp --robot manifests/raspberry-p
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- DRIVE frame=base distance=0.5
-         succeeded
+rover -> succeeded
 rover <- TURN frame=base angle=1.57079632679
-         succeeded
+rover -> succeeded
 rover <- DRIVE frame=base distance=0.5
-         succeeded
+rover -> succeeded
 rover <- TURN frame=base angle=1.57079632679
-         succeeded
+rover -> succeeded
 rover <- DRIVE frame=base distance=0.5
-         succeeded
+rover -> succeeded
 rover <- TURN frame=base angle=1.57079632679
-         succeeded
+rover -> succeeded
 rover <- DRIVE frame=base distance=0.5
-         succeeded
+rover -> succeeded
 rover <- TURN frame=base angle=1.57079632679
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 ```
 
@@ -572,19 +572,19 @@ npm run uritp -- run docs/tutorial/06-rounds.uritp --robot manifests/raspberry-p
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- MOVE frame=base target=pose(4,1,0,0,0,0)
-         succeeded
+rover -> succeeded
 rover <- SENSE sensor=camera save="kitchen.jpg"
-         succeeded
+rover -> succeeded
 rover <- MOVE frame=base target=pose(2,3,0,0,0,0)
-         succeeded
+rover -> succeeded
 rover <- SENSE sensor=camera save="desk.jpg"
-         succeeded
+rover -> succeeded
 rover <- MOVE frame=base target=pose(0,3.5,0,0,0,0)
-         succeeded
+rover -> succeeded
 rover <- SENSE sensor=camera save="door.jpg"
-         succeeded
+rover -> succeeded
 rover <- MOVE frame=base target=pose(0,0,0,0,0,0)
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 ```
 
@@ -614,25 +614,25 @@ npm run uritp -- run docs/tutorial/06-until-close.uritp --robot manifests/raspbe
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- SENSE sensor=distance_front
-         succeeded
+rover -> succeeded
 rover <- DRIVE frame=base distance=0.1
-         succeeded
+rover -> succeeded
 rover <- SENSE sensor=distance_front
-         succeeded
+rover -> succeeded
 rover <- DRIVE frame=base distance=0.1
-         succeeded
+rover -> succeeded
 rover <- SENSE sensor=distance_front
-         succeeded
+rover -> succeeded
 rover <- DRIVE frame=base distance=0.1
-         succeeded
+rover -> succeeded
 rover <- SENSE sensor=distance_front
-         succeeded
+rover -> succeeded
 rover <- DRIVE frame=base distance=0.1
-         succeeded
+rover -> succeeded
 rover <- SENSE sensor=distance_front
-         succeeded
+rover -> succeeded
 rover <- DRIVE frame=base distance=0.1
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 ```
 
@@ -673,15 +673,15 @@ npm run uritp -- run docs/tutorial/07-tasks.uritp --robot manifests/raspberry-pi
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- MOVE frame=base target=pose(4,1,0,0,0,0)
-         succeeded
+rover -> succeeded
 rover <- SENSE sensor=camera save="kitchen.jpg"
-         succeeded
+rover -> succeeded
 rover <- MOVE frame=base target=pose(0,3.5,0,0,0,0)
-         succeeded
+rover -> succeeded
 rover <- SENSE sensor=camera save="door.jpg"
-         succeeded
+rover -> succeeded
 rover <- MOVE frame=base target=pose(0,0,0,0,0,0)
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 ```
 
@@ -734,25 +734,25 @@ npm run uritp -- run docs/tutorial/arm/07-arm.uritp --robot manifests/universal-
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 arm <- MOVE frame=tool target=pose(0.4,0.1,0.15,3.14159265359,0,0) speed=0.2
-       succeeded
+arm -> succeeded
 arm <- MOVE frame=tool target=pose(0.4,0.1,0.05,3.14159265359,0,0) speed=0.1
-       succeeded
+arm -> succeeded
 arm <- ACTUATE actuator=gripper state=closed force=40
-       succeeded
+arm -> succeeded
 arm <- MOVE frame=tool target=pose(0.3,-0.3,0.15,3.14159265359,0,0) speed=0.2
-       succeeded
+arm -> succeeded
 arm <- ACTUATE actuator=gripper state=open
-       succeeded
+arm -> succeeded
 arm <- MOVE frame=tool target=pose(0.3,-0.3,0.15,3.14159265359,0,0) speed=0.2
-       succeeded
+arm -> succeeded
 arm <- MOVE frame=tool target=pose(0.3,-0.3,0.05,3.14159265359,0,0) speed=0.1
-       succeeded
+arm -> succeeded
 arm <- ACTUATE actuator=gripper state=closed force=40
-       succeeded
+arm -> succeeded
 arm <- MOVE frame=tool target=pose(0.4,0.1,0.15,3.14159265359,0,0) speed=0.2
-       succeeded
+arm -> succeeded
 arm <- ACTUATE actuator=gripper state=open
-       succeeded
+arm -> succeeded
 The program ended: succeeded.
 Lines the arm driver would send (simulator only, not tested on real hardware):
   movel(p[0.4, 0.1, 0.15, 3.141593, 0.0, 0.0], a=1.2, v=0.2)
@@ -797,7 +797,7 @@ npm run uritp -- run docs/tutorial/08-no-plan.uritp --robot manifests/raspberry-
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- MOVE frame=base target=pose(9,1,0,0,0,0) avoid=[polygon((8,0),(10,0),(10,2),(8,2))]
-         failed: no straight path to the target stays out of a zone to avoid
+rover -> failed: no straight path to the target stays out of a zone to avoid
 rover <- STOP
 The program ended: failed.
 R703 (line 4): a task failed while running: move failed: no straight path to the target stays out of a zone to avoid
@@ -832,10 +832,10 @@ npm run uritp -- run docs/tutorial/08-on-fail.uritp --robot manifests/raspberry-
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- MOVE frame=base target=pose(9,1,0,0,0,0) avoid=[polygon((8,0),(10,0),(10,2),(8,2))]
-         failed: no straight path to the target stays out of a zone to avoid
+rover -> failed: no straight path to the target stays out of a zone to avoid
 log: I could not get there: move failed: no straight path to the target stays out of a zone to avoid
 rover <- MOVE frame=base target=pose(0,0,0,0,0,0)
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 ```
 
@@ -960,9 +960,9 @@ npm run uritp -- run docs/tutorial/02-hello.uritp --robot manifests/arduino/ardu
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- DRIVE frame=base distance=0.5
-         succeeded
+rover -> succeeded
 rover <- TURN frame=base angle=1.57079632679
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 Lines the rover driver would send (simulator only, not tested on real hardware):
   F 500 200
@@ -1023,11 +1023,11 @@ npm run uritp -- run docs/tutorial/10-talk.uritp --robot docs/tutorial/my-robot.
 ```text
 Simulated robots only. Nothing is sent to real hardware.
 rover <- SAY text="Hello! I am going to the kitchen."
-         succeeded
+rover -> succeeded
 rover <- MOVE frame=base target=pose(4,1,0,0,0,0)
-         succeeded
+rover -> succeeded
 rover <- SAY text="मैं रसोई में पहुँच गया हूँ" lang=hi
-         succeeded
+rover -> succeeded
 The program ended: succeeded.
 ```
 
@@ -1064,15 +1064,15 @@ npm run uritp -- run docs/tutorial/11-two-robots.uritp --robot big=manifests/ras
 Simulated robots only. Nothing is sent to real hardware.
 small <- DRIVE frame=base distance=1
 big <- MOVE frame=base target=pose(4,1,0,0,0,0)
-         succeeded
-       succeeded
+small -> succeeded
+big -> succeeded
 log: both robots have finished
 The program ended: succeeded.
 ```
 
 Both instructions start together. The small rover's short drive finishes
-first. Each `succeeded` lines up under its own robot's instruction. Only
-when both are done does the program go on to the `log` line.
+first, so `small -> succeeded` comes before `big -> succeeded`. Only when
+both are done does the program go on to the `log` line.
 
 Without names, manifests go to the robots in the order the program connects
 them.

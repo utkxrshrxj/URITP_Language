@@ -20,6 +20,7 @@ const FILES: Record<string, string> = {
   "work/fast.uritp": lines('robot rover = connect("lab:rover")', "drive rover.base forward by 1m speed 3m/s"),
   "work/two.uritp": lines('robot a = connect("x")', 'robot b = connect("y")', "drive a.base forward by 1m", "drive b.base backward by 1m"),
   "work/blocked.uritp": lines('robot rover = connect("lab:rover")', "drive rover.base forward by 5m"),
+  "work/side-by-side.uritp": lines('robot a = connect("x")', 'robot b = connect("y")', "parallel:", "    drive a.base forward by 1m", "    drive b.base forward by 2m"),
   "work/safe.uritp": lines('robot rover = connect("lab:rover")', "safety:", "    stop rover when rover.battery < 20%", "drive rover.base forward by 1m speed 0.2m/s"),
   "manifests/acme/rover.uritp": ROVER,
 };
@@ -107,9 +108,15 @@ describe("uritp run", () => {
     });
     expect(asked).toEqual(["acme"]);
     expect(code).toBe(0);
-    expect(output).toContain("rover <- MOVE frame=base target=pose(1,0,0,0,0,0) speed=0.2");
+    expect(output).toContain(lines("rover <- MOVE frame=base target=pose(1,0,0,0,0,0) speed=0.2", "rover -> succeeded"));
     expect(output).toContain("The program ended: succeeded.");
     expect(output).toContain("Lines the rover driver would send (simulator only, not tested on real hardware):");
+  });
+
+  it("names the robot on each result line, so parallel results can be told apart", async () => {
+    const { code, output } = await cli(["run", "work/side-by-side.uritp", ...ROBOT, ...ROBOT]);
+    expect(code).toBe(0);
+    expect(output).toContain(lines("a <- DRIVE frame=base distance=1", "b <- DRIVE frame=base distance=2", "a -> succeeded", "b -> succeeded"));
   });
 
   it("does not print the safety watcher's readings, but still sends them to the robot", async () => {

@@ -231,7 +231,7 @@ function makeRunner(loaded: Loaded, drivers: Record<string, Driver>, clock: Cloc
   });
 }
 
-/** Wraps a robot connection so each instruction and its final state are printed as they happen. */
+/** Wraps a robot connection so each instruction and its final state are printed, with the robot's name. */
 function watched(name: string, port: RobotPort, io: CliIO): RobotPort {
   return {
     run: async (instr, update) => {
@@ -241,7 +241,7 @@ function watched(name: string, port: RobotPort, io: CliIO): RobotPort {
         if (u.state === "succeeded" || u.state === "failed" || u.state === "cancelled") final = u.reason === undefined ? u.state : `${u.state}: ${u.reason}`;
         update(u);
       });
-      io.print(`${" ".repeat(name.length)}    ${final}`);
+      io.print(`${name} -> ${final}`);
     },
     stop: async () => {
       io.print(`${name} <- STOP`);
