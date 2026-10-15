@@ -620,6 +620,28 @@ reject a doubtful program rather than guess.
   use only objects' properties, fixed values and comparisons. Anything else
   fails while running (R705).
 
+### D32. Who waits
+- **Gap:** §5 has `wait Q` and `wait until COND [timeout Q]`, and §9.2 has a
+  `WAIT` instruction, but not which robot gets it.
+- **Decision:**
+  - `wait Q` with exactly one connected robot is sent to it as
+    `WAIT duration=Q`, so STOP and `on fail` treat it like any other task.
+    With several robots, the runner waits itself; a pause in the program is
+    not something one robot does.
+  - `wait until COND` is worked out by the runner: it checks the condition,
+    reading values with SENSE (D30), every short interval until it is true.
+    The condition may use the program's own variables, which a robot
+    cannot see. If the timeout passes first, the task fails with R702.
+
+### D33. When one part of `parallel:` fails
+- **Guidebook:** `parallel:` "starts every statement in the block at once
+  and waits for all to finish" (§5); `on fail` runs "if any task in the
+  enclosing block fails".
+- **Decision:** when one statement inside `parallel:` fails, the others are
+  cancelled at once and their robots are stopped, then the failure moves out
+  to the enclosing block. Robots working together (for example two arms
+  carrying one object) must not carry on as if nothing happened.
+
 ### D35. Which task state sequences are valid
 - **Guidebook:** a robot reports `accepted`, then `running`, then exactly
   one of `succeeded`, `failed(reason)` or `cancelled` (§9.3 rule 3). It also

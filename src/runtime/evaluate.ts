@@ -9,6 +9,9 @@ import { bool, ORIGIN, poseOf, quantityFromSI, quantityOf, show, type Value } fr
 
 /** A failure while running, delivered to on fail: with its R7xx code (Guidebook §8). */
 export class RunFailure extends Error {
+  /** The line of the statement that failed; filled in by the runner. */
+  line = 0;
+
   constructor(
     readonly code: string,
     readonly reason: string,

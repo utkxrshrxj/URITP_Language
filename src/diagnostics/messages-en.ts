@@ -438,6 +438,40 @@ const messages: Record<string, MessageEntry> = {
     fix: (a) => `Define zone ${arg(a, "zone")} in the site map with fixed corners, so the robot can be kept out of it.`,
   },
 
+  // ---- R7xx: failures while running, delivered to on fail: (Guidebook §8) ----
+  R701: {
+    message: (a) => `the robot refused an instruction: ${arg(a, "reason")}`,
+    fix: () => "Check that the program was checked against this robot's manifest.",
+  },
+  R702: {
+    message: (a) => `a wait timed out: ${arg(a, "reason")}`,
+    fix: () => "Handle it in on fail:, or give the condition more time.",
+  },
+  R703: {
+    message: (a) => `a task failed while running: ${arg(a, "reason")}`,
+    fix: () => "Handle it in on fail:, for example by going back to a safe place.",
+  },
+  R704: {
+    message: (a) => `the robot broke the task lifecycle: ${arg(a, "reason")}`,
+    fix: () => "The robot's driver must report accepted, running, then exactly one final state (Guidebook §9.3 rule 3).",
+  },
+  R705: {
+    message: (a) => `a value could not be worked out while running: ${arg(a, "reason")}`,
+    fix: () => "Check the values used on this line.",
+  },
+  R706: {
+    message: (a) => `cannot tell which robot should do this: ${arg(a, "reason")}`,
+    fix: () => "Connect only one robot that can do it (DECISIONS.md D27, D30).",
+  },
+  R707: {
+    message: (a) => `something the program needs is missing: ${arg(a, "reason")}`,
+    fix: () => "Connect every robot the program names, and give every file it imports.",
+  },
+  R708: {
+    message: (a) => `the runner cannot do this: ${arg(a, "reason")}`,
+    fix: () => "",
+  },
+
   // ---- W6xx: portability warnings (Guidebook §7) ----
   W601: {
     message: (a) => `'${arg(a, "name")}' is used without a ${arg(a, "robot")}.has(...) guard`,

@@ -145,11 +145,27 @@ Warnings do not stop a program, but they are always shown.
 | W601 | a vendor extension used without a `.has(...)` guard (§7) | `examplecorp.adaptive_weld(...)` outside `if welder.has(...)` |
 | W602 | native code, which makes a program non-portable (§7) | `native("urscript", "...")` |
 
+## R7xx: failures while running (Phase 5)
+
+These happen after the checks have passed, for example when a path is
+blocked. They are delivered to `on fail:`, where `error.code` holds the code
+and `error.reason` holds the reason. If no `on fail:` handles one, every
+robot stops and the program ends as failed (§8, D15).
+
+| Code | Meaning | Example |
+|---|---|---|
+| R701 | the robot refused an instruction straight away (§9.3 rule 4) | `turn was refused by 'rover': E401 cannot turn` |
+| R702 | `wait until` reached its timeout | `waited 2min but the condition did not become true` |
+| R703 | a task failed while running (§8) | `move failed: path blocked at places.corridor_2` |
+| R704 | the robot broke the task lifecycle (§9.3 rule 3, D35) | a robot that reports succeeded without accepted and running |
+| R705 | a value could not be worked out while running | a worked-out percent of 110% (D12) |
+| R706 | it is not clear which robot should do something (D27, D30) | reading `mug.fill` with two robots that can see |
+| R707 | a robot connection or imported file is missing | no connection for robot `rover` |
+| R708 | something the runner cannot do yet | a program with a `safety:` block, until Phase 5 is finished |
+
 ## Codes fixed by the Guidebook
 
-These keep the meaning the Guidebook gives them (DECISIONS.md D21). They are
-built in later phases, along with the other codes of their stage.
-
-| Code | Meaning | Phase |
-|---|---|---|
-| R703 | a motion failed while running | 5 |
+The exact codes the Guidebook shows in §8 keep their meaning (DECISIONS.md
+D21), and all of them are now built: E101 (syntax), E203 (names), E304
+(types and units), E401 (capabilities), E502 (safety), W601 (portability)
+and R703 (runtime). They are listed in the tables above.
