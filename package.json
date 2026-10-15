@@ -1,6 +1,6 @@
 {
   "name": "uritp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "URITP: a small, safe language and compiler that turns human requests into checked robot instructions",
   "private": true,
   "license": "UNLICENSED",
