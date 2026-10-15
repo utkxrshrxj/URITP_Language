@@ -33,9 +33,12 @@ export interface RuleResult {
 const TEST_OBJECT = "conformance_box";
 const pose = (x: number, y: number, z: number): PoseSI => ({ x, y, z, roll: 0, pitch: 0, yaw: 0 });
 
-/** A fresh driver on a fast clock, with a test object it can find. */
-function fresh(target: ConformanceTarget, model: RobotModel): { driver: Driver; clock: Clock } {
-  const clock = realClock({ speed: 1000 });
+/**
+ * A fresh driver with a test object it can find. Most rules run on a fast clock; the STOP rule
+ * uses real time, since its limit is in real seconds and a fast clock would magnify any delay.
+ */
+function fresh(target: ConformanceTarget, model: RobotModel, speed = 1000): { driver: Driver; clock: Clock } {
+  const clock = realClock({ speed });
   const options: DriverOptions = {
     model,
     clock,
@@ -145,7 +148,7 @@ export async function runConformance(target: ConformanceTarget): Promise<RuleRes
   {
     const { driver: idle } = fresh(target, model);
     await idle.stop(); // STOP while nothing is running must simply work
-    const { driver: busy, clock } = fresh(target, model);
+    const { driver: busy, clock } = fresh(target, model, 1);
     const task = runTask(busy, instruction("WAIT", { duration: num(3600) }));
     await new Promise((resolve) => setTimeout(resolve, 5));
     const before = clock.now();

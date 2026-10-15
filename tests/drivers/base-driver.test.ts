@@ -104,7 +104,9 @@ describe("simulated driver", () => {
   });
 
   it("obeys STOP from any state, within its stopping time (§9.3 rule 5)", async () => {
-    const { robot, clock } = driver();
+    // Real time here: the stopping time is in real seconds, and a fast clock would magnify any delay.
+    const clock = realClock();
+    const robot = new TestDriver({ model: ROVER, zones: { stairs: STAIRS }, clock });
     const task = runTask(robot, instruction("DRIVE", { frame: word("base"), direction: word("forward") }));
     await new Promise((resolve) => setTimeout(resolve, 5));
     const before = clock.now();
