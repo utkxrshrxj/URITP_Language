@@ -730,6 +730,21 @@ reject a doubtful program rather than guess.
     service error or unreadable answer becomes a plain "not understood",
     never a crash.
 
+### D41. Error messages in Hindi
+- **Guidebook:** message texts are kept in translation tables, so the same
+  code can be shown in English, Arabic or Hindi; codes never change between
+  languages (§8).
+- **Decision:**
+  - Every code has an English and a Hindi message and fix, in
+    `src/diagnostics/messages-en.ts` and `messages-hi.ts`. A test makes sure
+    both tables cover exactly the same codes.
+  - The code, the line number and URITP's own words (`move`, `on fail`,
+    units, names from the program) stay the same in both languages.
+  - Some details are filled into a message as they were written by the
+    checker or by a robot, such as the expected word in "expected 'to'", or
+    a robot's own reason for a failure. In URITP 0.1 those details stay in
+    English inside a Hindi message.
+
 ### D35. Which task state sequences are valid
 - **Guidebook:** a robot reports `accepted`, then `running`, then exactly
   one of `succeeded`, `failed(reason)` or `cancelled` (§9.3 rule 3). It also

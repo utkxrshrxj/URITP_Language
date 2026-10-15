@@ -53,7 +53,8 @@ export function explain(
  */
 export function formatDiagnostic(diagnostic: Diagnostic, table: MessageTable = ENGLISH): string {
   const { message, fix } = explain(diagnostic, table);
-  const where = diagnostic.file === undefined ? `line ${diagnostic.line}` : `${diagnostic.file}, line ${diagnostic.line}`;
+  const line = `${table.lineLabel} ${diagnostic.line}`;
+  const where = diagnostic.file === undefined ? line : `${diagnostic.file}, ${line}`;
   const first = `${diagnostic.code} (${where}): ${message}`;
   return fix === "" ? first : `${first}\n  ${table.fixLabel}: ${fix}`;
 }

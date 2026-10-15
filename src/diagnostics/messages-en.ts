@@ -11,6 +11,8 @@ export interface MessageEntry {
 export interface MessageTable {
   /** The word printed before the suggested fix, e.g. "Fix". */
   readonly fixLabel: string;
+  /** The word for a line number, e.g. "line" in "E101 (line 4)". */
+  readonly lineLabel: string;
   readonly messages: Readonly<Record<string, MessageEntry>>;
 }
 
@@ -497,4 +499,4 @@ const messages: Record<string, MessageEntry> = {
   },
 };
 
-export const ENGLISH: MessageTable = { fixLabel: "Fix", messages };
+export const ENGLISH: MessageTable = { fixLabel: "Fix", lineLabel: "line", messages };
