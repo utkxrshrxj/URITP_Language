@@ -1,11 +1,13 @@
-// Checks that every example program and site map in examples/ parses with no errors.
-// This keeps the examples in step with the grammar as the language grows.
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+// Checks that every example program and site map in examples/ parses and passes the checker.
+// This keeps the examples in step with the language as it grows.
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { check } from "../src/checker/checker.js";
 import { formatDiagnostic } from "../src/diagnostics/diagnostic.js";
 import { parse } from "../src/parser/parser.js";
+import { WITH_TEST_ROBOTS } from "./checker/models.js";
 
 const examplesDir = fileURLToPath(new URL("../examples", import.meta.url));
 const files = readdirSync(examplesDir, { recursive: true, encoding: "utf8" })
@@ -29,5 +31,15 @@ describe("examples", () => {
       const { program } = parse(readFileSync(join(examplesDir, file), "utf8"));
       expect(program.statements.every((s) => s.kind === "Define")).toBe(true);
     }
+  });
+
+  const programs = files.filter((f) => !f.endsWith("site.uritp"));
+
+  it.each(programs)("%s passes the name, type and unit checks", (file) => {
+    const { program } = parse(readFileSync(join(examplesDir, file), "utf8"));
+    const sitePath = join(examplesDir, dirname(file), "site.uritp");
+    const siteMaps = existsSync(sitePath) ? [{ name: "site.uritp", source: readFileSync(sitePath, "utf8") }] : [];
+    const { diagnostics } = check(program, { ...WITH_TEST_ROBOTS, siteMaps });
+    expect(diagnostics.map((d) => formatDiagnostic(d))).toEqual([]);
   });
 });

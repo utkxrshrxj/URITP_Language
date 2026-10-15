@@ -1,8 +1,10 @@
-// Feeds the six example programs exactly as they appear in the source PDF to the parser,
+// Feeds the six example programs exactly as they appear in the source PDF to the compiler,
 // and checks each known mistake gets a clear error and fix (see spec/DECISIONS.md part A).
 import { describe, expect, it } from "vitest";
+import { check } from "../src/checker/checker.js";
 import { explain } from "../src/diagnostics/diagnostic.js";
 import { parse } from "../src/parser/parser.js";
+import { WITH_TEST_ROBOTS } from "./checker/models.js";
 
 const lines = (...source: string[]): string => source.join("\n");
 
@@ -92,5 +94,38 @@ describe("original example programs", () => {
       "    weld along seam speed 5mms current 180A",
     );
     expect(problems(source)).toContain("E110 3: Did you mean 5mm/s?");
+  });
+});
+
+describe("original examples that parse but break naming rules", () => {
+  /** Problems the checker finds, with the robots and a site map holding the places they use. */
+  function checkProblems(source: string, site: string): string[] {
+    const parsed = parse(source);
+    expect(parsed.diagnostics).toEqual([]);
+    const result = check(parsed.program, { ...WITH_TEST_ROBOTS, siteMaps: [{ name: "site.uritp", source: site }] });
+    return result.diagnostics.map((d) => `${d.code} ${d.line}: ${explain(d).message}`);
+  }
+
+  it("v: counter.spot_a is not a place (DECISIONS.md A13)", () => {
+    const source = lines(
+      'robot helper = connect("home:humanoid")',
+      "move helper.base to places.counter",
+      "place kettle on counter.spot_a using helper.left_hand",
+    );
+    expect(checkProblems(source, "define place counter = pose(3m, 2m, 0m)")).toEqual([
+      "E202 3: 'counter' is not defined",
+    ]);
+  });
+
+  it("vi: a bare seam is not a route (DECISIONS.md A12)", () => {
+    const source = lines(
+      'robot welder = connect("line3:examplecorp-x7")',
+      "move welder.tool to seam.start",
+      "weld along seam speed 5mm/s current 180A",
+    );
+    expect(checkProblems(source, "define place home = pose(0m, 0m, 0m)")).toEqual([
+      "E202 2: 'seam' is not defined",
+      "E202 3: 'seam' is not defined",
+    ]);
   });
 });
