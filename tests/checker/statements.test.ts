@@ -23,6 +23,13 @@ const ROBOTS = lines(
 /** Checks statements after the four test robots are connected. */
 const run = (...statements: string[]): string[] => codes(lines(ROBOTS, ...statements), OPTIONS);
 
+/**
+ * Checks statements with only one robot connected. Statements that name no robot, like say,
+ * run on the one robot that can (DECISIONS.md D27), so they are tested this way.
+ */
+const runWith = (robot: string, ...statements: string[]): string[] =>
+  codes(lines(`robot ${robot} = connect("x")`, ...statements), OPTIONS);
+
 describe("motion", () => {
   it.each([
     "move rover.base to places.lab",
@@ -76,7 +83,6 @@ describe("manipulation", () => {
     "grip arm.gripper close force 20N",
     "pick box_231 using arm onto rover.base",
     "place kettle on places.lab using helper.left_hand",
-    "pour from kettle into mug until mug.fill >= 80%",
     "grip helper.right_hand close",
     "move helper.right_hand to mug.handle",
   ])("accepts %s", (statement) => {
@@ -91,9 +97,10 @@ describe("manipulation", () => {
     expect(run("grip arm.tool close")).toEqual(["E306"]);
   });
 
-  it("checks weld and spray slots", () => {
-    expect(run("weld along route.seam speed 5mm/s current 180A")).toEqual([]);
-    expect(run("weld along route.seam speed 5mm/s current 180")).toEqual(["E304"]);
+  it("checks pour, weld and spray slots", () => {
+    expect(runWith("helper", "pour from kettle into mug until mug.fill >= 80%")).toEqual([]);
+    expect(runWith("welder", "weld along route.seam speed 5mm/s current 180A")).toEqual([]);
+    expect(runWith("welder", "weld along route.seam speed 5mm/s current 180")).toEqual(["E304"]);
   });
 });
 
@@ -102,11 +109,16 @@ describe("sensing and talking", () => {
     'capture rover.camera save as "photo.jpg"',
     'log rover.battery, rover.state',
     'alert "Battery at {rover.battery}"',
-    'say "Parcel for you" lang en',
-    'confirm "Shall I go?" lang hi',
   ])("accepts %s", (statement) => {
     expect(run(statement)).toEqual([]);
   });
+
+  it.each(['say "Parcel for you" lang en', 'confirm "Shall I go?" lang hi', 'let room = ask "Which room?"'])(
+    "accepts %s on a robot that can speak",
+    (statement) => {
+      expect(runWith("rover", statement)).toEqual([]);
+    },
+  );
 
   it("reports a missing sensor as E205", () => {
     expect(run('capture rover.lidar save as "x.jpg"')).toEqual(["E205"]);
@@ -117,7 +129,7 @@ describe("sensing and talking", () => {
   });
 
   it("rejects a language code that is not one (E316)", () => {
-    expect(run('say "hello" lang english')).toEqual(["E316"]);
+    expect(runWith("rover", 'say "hello" lang english')).toEqual(["E316"]);
   });
 });
 
@@ -128,11 +140,11 @@ describe("control flow", () => {
   });
 
   it("gives the loop variable the type of the route's items", () => {
-    expect(run("for p in route.patrol:", '    say "At {p.name}"', "    move rover.base to p")).toEqual([]);
+    expect(run("for p in route.patrol:", '    log "At {p.name}"', "    move rover.base to p")).toEqual([]);
   });
 
   it("knows that poses in a route have no name (D7)", () => {
-    expect(run("for p in route.seam:", '    say "At {p.name}"')).toEqual(["E211"]);
+    expect(run("for p in route.seam:", '    log "At {p.name}"')).toEqual(["E211"]);
   });
 
   it("rejects looping over something that is not a list", () => {
@@ -172,7 +184,7 @@ describe("on fail and error (Guidebook §8)", () => {
       "move rover.base to places.lab",
       "on fail:",
       "    log error.code, error.reason",
-      '    say "I could not reach the lab: {error.reason}"',
+      '    alert "I could not reach the lab: {error.reason}"',
       "    move rover.base to places.dock",
     );
     expect(run(source)).toEqual([]);

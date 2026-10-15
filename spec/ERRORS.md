@@ -97,6 +97,16 @@ searchable (§8). The English wording lives in
 | E319 | a polygon with fewer than 3 corners | `polygon(pose(...), pose(...))` |
 | E320 | a task call used as a value when the task returns nothing | `let x = wave()` |
 
+## E4xx: capabilities (Phase 4)
+
+| Code | Meaning | Example that triggers it |
+|---|---|---|
+| E401 | a command needs a profile the robot does not have (§8) | `takeoff rover to 2m` on a rover with `[core, navigation]` |
+| E402 | a vendor extension no connected robot has | `examplecorp.adaptive_weld(...)` on a rover |
+| E403 | a statement that names no robot, which more than one robot could run (D18, D27) | `say "hi"` with two robots that can speak |
+| E404 | a statement that names no robot, which no connected robot can run (D27) | `say "hi"` with only robots that cannot speak |
+| E405 | native code, which no URITP 0.1 robot accepts (D20) | `native("urscript", "...")` |
+
 ## E41x: problems in a manifest (Phase 4)
 
 A manifest describes what a robot can do (§9.1), so its problems use the
@@ -115,6 +125,15 @@ capability range. A manifest with any error is not used at all.
 | E418 | an extension name that breaks the naming rule | `extension ExampleCorp.Weld(...)`, `extension navigation.boost()` |
 | E419 | a forbidden zone that is not `zones.NAME` or a fixed polygon | `safety forbidden_zone cup` |
 
+## W6xx: portability warnings (Phase 4)
+
+Warnings do not stop a program, but they are always shown.
+
+| Code | Meaning | Example that triggers it |
+|---|---|---|
+| W601 | a vendor extension used without a `.has(...)` guard (§7) | `examplecorp.adaptive_weld(...)` outside `if welder.has(...)` |
+| W602 | native code, which makes a program non-portable (§7) | `native("urscript", "...")` |
+
 ## Codes fixed by the Guidebook
 
 These keep the meaning the Guidebook gives them (DECISIONS.md D21). They are
@@ -122,7 +141,5 @@ built in later phases, along with the other codes of their stage.
 
 | Code | Meaning | Phase |
 |---|---|---|
-| E401 | a command needs a profile the robot does not have | 4 |
 | E502 | a speed is above the robot's safety limit | 4 |
-| W601 | a vendor extension is used without a `.has(...)` guard | 4 |
 | R703 | a motion failed while running | 5 |

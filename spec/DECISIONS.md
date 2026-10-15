@@ -532,6 +532,28 @@ reject a doubtful program rather than guess.
   nothing about it could be checked before it moves (§1, "check before you
   move").
 
+### D27. Statements that name no robot
+- **Gap:** `say`, `confirm`, `ask`, `pour` and `weld along` do not name a
+  robot (§5), but each needs a profile (§7). With more than one connected
+  robot, the Guidebook does not say which one runs them.
+- **Decision:** Such a statement runs on the one connected robot that has
+  the profiles it needs.
+  - If no connected robot can run it, it is an error (E401 when there is
+    only one robot, E404 otherwise).
+  - If more than one could, it is an error (E403), because a robot program
+    must never guess. This is the same rule as for extensions (D18).
+
+### D28. `.has()` is worked out before the program runs
+- **Decision:**
+  - `ROBOT.has("NAME")` is answered from the manifest, so the checker knows
+    which branch of `if ROBOT.has(...)` (or `if not ROBOT.has(...)`) will run.
+  - A branch that can never run is still checked for names, types and
+    units, but not for capabilities. So example vi is accepted on a welder
+    with or without the extension, as the Guidebook intends.
+  - An extension call counts as guarded (no W601) when it is inside
+    `if ROBOT.has("vendor.feature"):`, alone or joined to other conditions
+    with `and`.
+
 ---
 
 ## Proposed, not adopted

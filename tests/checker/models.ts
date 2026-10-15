@@ -27,7 +27,7 @@ export const MODELS: Readonly<Record<string, RobotModel>> = {
     frames: { tool: { type: "pose6d" } },
     actuators: { gripper: { states: ["open", "closed"] } },
     sensors: { camera: { kind: "rgb", dimension: null }, force: { kind: "wrench", dimension: "Force" } },
-    profiles: ["core", "manipulation", "vision"],
+    profiles: ["core", "manipulation", "vision", "speech"],
   }),
   drone: model("Test drone", {
     frames: { base: { type: "pose6d" } },

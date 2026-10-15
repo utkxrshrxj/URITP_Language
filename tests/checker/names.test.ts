@@ -149,8 +149,12 @@ describe("imports", () => {
 });
 
 describe("vendor extensions (DECISIONS.md D18)", () => {
-  it("leaves extension calls for the capability check in Phase 4", () => {
-    const source = lines('robot welder = connect("x")', "examplecorp.adaptive_weld(route.seam, current=180A)");
+  it("finds an extension in the robot's manifest; capability rules are tested in capabilities.test.ts", () => {
+    const source = lines(
+      'robot welder = connect("x")',
+      'if welder.has("examplecorp.adaptive_weld"):',
+      "    examplecorp.adaptive_weld(route.seam, current=180A)",
+    );
     const site: CheckOptions = {
       ...WITH_TEST_ROBOTS,
       siteMaps: [{ name: "site.uritp", source: "define route seam = [pose(0m, 0m, 0m), pose(1m, 0m, 0m)]" }],

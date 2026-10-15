@@ -20,7 +20,8 @@ export type Type =
   | { readonly kind: "Robot"; readonly robot: string }
   /** A named part of a robot. A hand can be a frame and an actuator at once (DECISIONS.md D8). */
   | { readonly kind: "Part"; readonly robot: string; readonly part: string; readonly roles: readonly PartRole[] }
-  | { readonly kind: "Reading"; readonly dimension: Dimension | null }
+  /** A sensor result; it remembers its robot so .analyse can check that robot's profiles. */
+  | { readonly kind: "Reading"; readonly dimension: Dimension | null; readonly robot?: string }
   /** The result of reading.analyse(OBJECT) (DECISIONS.md D10). */
   | { readonly kind: "Analysis" }
   | { readonly kind: "List"; readonly item: Type }

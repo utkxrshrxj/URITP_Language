@@ -37,6 +37,7 @@ import {
   type Signature,
 } from "../stdlib/signatures.js";
 import { isUnit, SUGGESTED_UNIT, UNITS, type Dimension } from "../stdlib/units.js";
+import { acceptForType, missingProfile, robotHas } from "./capabilities.js";
 import { evaluateConstant, type Constant } from "./constants.js";
 import type { RobotModel } from "./robot-model.js";
 import { Scope, type Binding } from "./scope.js";
@@ -152,6 +153,13 @@ export class Checker {
   private readonly taskStack: string[] = [];
   /** The value types given by return statements in the task being checked. */
   private returns: { type: Type; at: Position }[] = [];
+  /**
+   * How many blocks we are inside that can never run, because a .has() check is known to be
+   * false (or an earlier branch is known to be taken). Capability problems there are not reported.
+   */
+  private deadDepth = 0;
+  /** Extensions guarded by an enclosing if ROBOT.has("vendor.feature"): (Guidebook §7). */
+  private readonly guards: string[] = [];
 
   constructor(private readonly options: CheckOptions = {}) {}
 
@@ -174,7 +182,14 @@ export class Checker {
         seen.add(key);
         return true;
       })
-      .sort((a, b) => (a.file ?? "").localeCompare(b.file ?? "") || a.line - b.line || a.column - b.column);
+      .sort(
+        (a, b) =>
+          (a.file ?? "").localeCompare(b.file ?? "") ||
+          a.line - b.line ||
+          a.column - b.column ||
+          // At the same spot, errors come before warnings.
+          (a.severity === b.severity ? 0 : a.severity === "error" ? -1 : 1),
+      );
   }
 
   // -------------------------------------------------------------------------
@@ -258,6 +273,7 @@ export class Checker {
         this.returns.push({ type: statement.value === null ? NOTHING : this.checkValue(statement.value), at: statement });
         return;
       case "Let": {
+        if (statement.value.kind === "Ask") this.requireSomeRobot("ask", statement.value);
         const type = statement.value.kind === "Ask" ? this.checkAsk(statement.value.question) : this.checkValue(statement.value);
         if (type.kind === "Nothing") this.reportNoValue(statement.value);
         const binding = this.bind(statement.name, type, statement);
@@ -281,30 +297,33 @@ export class Checker {
         return;
 
       // Motion (Guidebook §5)
-      case "Move":
-        this.expectValue(statement.frame, FRAME, "the frame to move");
+      case "Move": {
+        const frame = this.expectValue(statement.frame, FRAME, "the frame to move");
         this.expectValue(statement.target, TARGET, "the target of move");
         this.optional(statement.speed, amountOf("Speed"), "speed");
         this.optional(statement.tolerance, amountOf("Length"), "tolerance");
         this.optional(statement.via, ROUTE, "via");
         for (const zone of statement.avoid) this.expectValue(zone, ZONE_ONLY, "avoid");
+        if (statement.via !== null) this.requireProfile(frame, "via", statement.via);
+        if (statement.avoid[0] !== undefined) this.requireProfile(frame, "avoid", statement.avoid[0]);
         return;
+      }
       case "Drive":
-        this.expectValue(statement.frame, FRAME, "the frame to drive");
+        this.requireProfile(this.expectValue(statement.frame, FRAME, "the frame to drive"), "drive", statement);
         this.optional(statement.distance, amountOf("Length"), "by");
         this.optional(statement.speed, amountOf("Speed"), "speed");
         return;
       case "Turn":
-        this.expectValue(statement.frame, FRAME, "the frame to turn");
+        this.requireProfile(this.expectValue(statement.frame, FRAME, "the frame to turn"), "turn", statement);
         this.expectValue(statement.angle, amountOf("Angle"), "the angle to turn by");
         this.optional(statement.speed, amountOf("AngularSpeed"), "speed");
         return;
       case "Takeoff":
-        this.expectValue(statement.robot, ROBOT, "the robot to take off");
+        this.requireProfile(this.expectValue(statement.robot, ROBOT, "the robot to take off"), "takeoff", statement);
         this.expectValue(statement.height, amountOf("Length"), "the height");
         return;
       case "Land":
-        this.expectValue(statement.robot, ROBOT, "the robot to land");
+        this.requireProfile(this.expectValue(statement.robot, ROBOT, "the robot to land"), "land", statement);
         this.optional(statement.at, PLACE_ONLY, "at");
         return;
       case "Stop":
@@ -313,38 +332,45 @@ export class Checker {
 
       // Manipulation
       case "Grip":
-        this.expectValue(statement.actuator, ACTUATOR, "the gripper or hand");
+        this.requireProfile(this.expectValue(statement.actuator, ACTUATOR, "the gripper or hand"), "grip", statement);
         this.optional(statement.force, amountOf("Force"), "force");
         return;
       case "Pick":
         this.expectValue(statement.object, OBJECT_ONLY, "the object to pick");
-        this.expectValue(statement.robot, ROBOT, "using");
+        this.requireProfile(this.expectValue(statement.robot, ROBOT, "using"), "pick", statement);
         this.optional(statement.onto, FRAME, "onto");
         return;
       case "Place":
         this.expectValue(statement.object, OBJECT_ONLY, "the object to place");
         this.expectValue(statement.target, TARGET, "on");
-        this.expectValue(statement.frame, FRAME, "using");
+        this.requireProfile(this.expectValue(statement.frame, FRAME, "using"), "place", statement);
         return;
       case "Pour":
         this.expectValue(statement.from, OBJECT_ONLY, "from");
         this.expectValue(statement.into, OBJECT_ONLY, "into");
         this.checkCondition(statement.until, "until");
+        this.requireSomeRobot("pour", statement);
         return;
       case "Weld":
         this.expectValue(statement.path, ROUTE, "the path to weld along");
         this.expectValue(statement.speed, amountOf("Speed"), "speed");
         this.expectValue(statement.current, amountOf("Current"), "current");
+        this.requireSomeRobot("weld", statement);
         return;
       case "Spray":
-        this.expectValue(statement.actuator, ACTUATOR, "the sprayer");
+        this.requireProfile(this.expectValue(statement.actuator, ACTUATOR, "the sprayer"), "spray", statement);
         this.expectValue(statement.target, TARGET, "on");
         this.expectValue(statement.amount, amountOf("Volume"), "amount");
+        return;
+      case "Native":
+        // Native code is never portable (W602), and no URITP 0.1 robot accepts it (D20).
+        this.report("W602", statement);
+        if (this.deadDepth === 0) this.report("E405", statement);
         return;
 
       // Sensing, data and talking to people
       case "Capture":
-        this.expectValue(statement.sensor, SENSOR, "the sensor to capture with");
+        this.requireProfile(this.expectValue(statement.sensor, SENSOR, "the sensor to capture with"), "capture", statement);
         this.checkText(statement.file);
         return;
       case "Log":
@@ -356,19 +382,17 @@ export class Checker {
       case "Say":
         this.checkText(statement.message);
         this.checkLang(statement.lang, statement);
+        this.requireSomeRobot("say", statement);
         return;
       case "Confirm":
         this.checkText(statement.question);
         this.checkLang(statement.lang, statement);
+        this.requireSomeRobot("confirm", statement);
         return;
 
       // Control flow
       case "If":
-        for (const branch of statement.branches) {
-          this.checkCondition(branch.condition, branch === statement.branches[0] ? "if" : "elif");
-          this.checkBlock(branch.body);
-        }
-        if (statement.elseBody !== null) this.checkBlock(statement.elseBody);
+        this.checkIf(statement);
         return;
       case "For": {
         const list = this.checkValue(statement.list);
@@ -400,7 +424,10 @@ export class Checker {
       // Safety
       case "Safety":
         for (const rule of statement.rules) {
-          if (rule.robot !== null) this.expectValue(rule.robot, ROBOT, rule.action);
+          if (rule.robot !== null) {
+            const robot = this.expectValue(rule.robot, ROBOT, rule.action);
+            if (rule.action === "return_home" || rule.action === "land") this.requireProfile(robot, rule.action, rule);
+          }
           this.optional(rule.at, PLACE_ONLY, "at");
           if (rule.message !== null) this.checkText(rule.message);
           this.checkCondition(rule.condition, "when");
@@ -483,6 +510,132 @@ export class Checker {
   private reportNoValue(expr: Expression | { kind: "Ask" }): void {
     if (expr.kind !== "Call" || expr.callee.kind !== "Name") return;
     this.report("E320", expr, { task: expr.callee.name });
+  }
+
+  // -------------------------------------------------------------------------
+  // Capabilities: profiles and extensions (Guidebook §7, §9.3)
+  // -------------------------------------------------------------------------
+
+  /** Reports E401 if the robot that `type` belongs to lacks the profile `what` needs. */
+  private requireProfile(type: Type, what: string, at: Position): void {
+    if (this.deadDepth > 0) return;
+    const robot = type.kind === "Robot" || type.kind === "Part" ? type.robot : type.kind === "Reading" ? type.robot : undefined;
+    if (robot === undefined) return;
+    const model = this.robots.get(robot);
+    if (model === undefined || model === null) return;
+    const missing = missingProfile(model, what);
+    if (missing !== null) {
+      this.report("E401", at, { what, profile: missing, robot, supported: model.profiles.join(", ") });
+    }
+  }
+
+  /**
+   * A statement that names no robot (say, confirm, ask, pour, weld) runs on the one connected
+   * robot that supports it (DECISIONS.md D27).
+   */
+  private requireSomeRobot(what: string, at: Position): void {
+    if (this.deadDepth > 0) return;
+    const models = [...this.robots.entries()];
+    if (models.some(([, model]) => model === null)) return; // E201 already reported
+    const able = models.filter(([, model]) => model !== null && missingProfile(model, what) === null);
+    if (able.length === 1) return;
+    if (able.length > 1) {
+      this.report("E403", at, { what, robots: able.map(([name]) => name).join(", ") });
+      return;
+    }
+    const [only] = models;
+    if (models.length === 1 && only !== undefined && only[1] !== null) {
+      const model = only[1];
+      this.report("E401", at, { what, profile: missingProfile(model, what) ?? "", robot: only[0], supported: model.profiles.join(", ") });
+      return;
+    }
+    const needs = missingProfile({ name: "", frames: {}, actuators: {}, sensors: {}, profiles: [], extensions: {} }, what) ?? "";
+    this.report("E404", at, { what, profile: needs });
+  }
+
+  /**
+   * if / elif / else. A condition like ROBOT.has("x") is known from the manifest, so a branch
+   * that can never run is still checked for names and types, but not for capabilities.
+   */
+  private checkIf(statement: Extract<Statement, { kind: "If" }>): void {
+    let laterBranchesDead = false;
+    for (const branch of statement.branches) {
+      this.checkCondition(branch.condition, branch === statement.branches[0] ? "if" : "elif");
+      const known = laterBranchesDead ? false : this.staticCondition(branch.condition);
+      this.checkGuarded(branch.body, this.guardsIn(branch.condition), laterBranchesDead || known === false);
+      if (known === true) laterBranchesDead = true;
+    }
+    if (statement.elseBody !== null) this.checkGuarded(statement.elseBody, [], laterBranchesDead);
+  }
+
+  private checkGuarded(block: Block, guards: readonly string[], dead: boolean): void {
+    this.guards.push(...guards);
+    if (dead) this.deadDepth++;
+    try {
+      this.checkBlock(block);
+    } finally {
+      if (dead) this.deadDepth--;
+      this.guards.splice(this.guards.length - guards.length, guards.length);
+    }
+  }
+
+  /** The value of ROBOT.has("NAME") or not ROBOT.has("NAME") from the manifest, or null if unknown. */
+  private staticCondition(condition: Expression): boolean | null {
+    if (condition.kind === "Unary" && condition.op === "not") {
+      const inner = this.staticCondition(condition.operand);
+      return inner === null ? null : !inner;
+    }
+    const has = this.hasCall(condition);
+    if (has === null) return null;
+    const model = this.robots.get(has.robot);
+    return model === undefined || model === null ? null : robotHas(model, has.name);
+  }
+
+  /** The extension names a condition guards: ROBOT.has("NAME"), alone or joined with and. */
+  private guardsIn(condition: Expression): string[] {
+    if (condition.kind === "Binary" && condition.op === "and") {
+      return [...this.guardsIn(condition.left), ...this.guardsIn(condition.right)];
+    }
+    const has = this.hasCall(condition);
+    return has === null ? [] : [has.name];
+  }
+
+  /** Reads ROBOT.has("NAME") with fixed text, or null for anything else. */
+  private hasCall(expr: Expression): { robot: string; name: string } | null {
+    if (expr.kind !== "Call" || expr.callee.kind !== "Member" || expr.callee.name !== "has") return null;
+    const owner = expr.callee.object;
+    const [arg] = expr.args;
+    if (owner.kind !== "Name" || arg?.value.kind !== "Text") return null;
+    if (arg.value.parts.some((p) => p.kind === "insert")) return null;
+    return { robot: owner.name, name: arg.value.parts.map((p) => (p.kind === "literal" ? p.text : "")).join("") };
+  }
+
+  /**
+   * A vendor extension call such as examplecorp.adaptive_weld(...): it must be in a connected
+   * robot's manifest (D18), and should be guarded by .has(...) (W601).
+   */
+  private checkExtensionCall(callee: MemberAccess, call: CallExpression): Type {
+    const vendor = callee.object.kind === "Name" ? callee.object.name : "";
+    const name = `${vendor}.${callee.name}`;
+    const models = [...this.robots.entries()];
+    const owners = models.filter(([, model]) => model !== null && model.extensions[name] !== undefined);
+    const [owner] = owners;
+    if (owner === undefined || owner[1] === null || owners.length > 1) {
+      this.checkArgumentsLoosely(call.args, { objectAllowed: true });
+      if (this.deadDepth > 0 || models.some(([, model]) => model === null)) return UNKNOWN;
+      if (owners.length > 1) this.report("E403", call, { what: name, robots: owners.map(([r]) => r).join(", ") });
+      else this.report("E402", call, { name });
+      return UNKNOWN;
+    }
+    const [robot, model] = owner;
+    const params = model.extensions[name]?.params ?? [];
+    this.checkArguments(
+      call,
+      { params: params.map((p, index) => ({ name: p.name, accepts: [acceptForType(p.type)], named: index > 0 && call.args.some((a) => a.label === p.name) })), returns: null, meaning: "" },
+      name,
+    );
+    if (this.deadDepth === 0 && !this.guards.includes(name)) this.report("W601", call, { name, robot });
+    return UNKNOWN;
   }
 
   private optional(expr: Expression | null, accepts: readonly Accept[], slot: string): void {
@@ -883,12 +1036,7 @@ export class Checker {
   /** A call like obj.above(10cm), reading.analyse(cup), rover.sense("x") or vendor.feature(...). */
   protected checkMethodCall(callee: MemberAccess, call: CallExpression): Type {
     const name = callee.name;
-    if (this.isExtensionCall(callee)) {
-      // A vendor extension such as examplecorp.adaptive_weld(...). Phase 4 checks it against
-      // the manifests (D18); here only its arguments are checked.
-      this.checkArgumentsLoosely(call.args, { objectAllowed: true });
-      return UNKNOWN;
-    }
+    if (this.isExtensionCall(callee)) return this.checkExtensionCall(callee, call);
     const owner = this.checkValue(callee.object, { objectAllowed: POSE_HELPERS[name] !== undefined });
     if (owner.kind === "Unknown") {
       this.checkArgumentsLoosely(call.args);
@@ -901,6 +1049,7 @@ export class Checker {
       return POSE;
     }
     if (name === "analyse" && owner.kind === "Reading") {
+      this.requireProfile(owner, "analyse", call);
       this.checkArguments(call, { params: [{ name: "object", accepts: [{ kind: "Object" }] }], returns: null, meaning: "" }, ".analyse");
       return { kind: "Analysis" };
     }
@@ -948,7 +1097,7 @@ export class Checker {
       this.report("E205", first, { robot, name: sensor, suggestion: closestMatch(sensor, known) ?? "", known: known.join(", ") });
       return UNKNOWN;
     }
-    return { kind: "Reading", dimension: found.dimension };
+    return { kind: "Reading", dimension: found.dimension, robot };
   }
 
   protected checkBuiltInCall(name: string, signature: Signature, call: CallExpression): Type {

@@ -333,6 +333,28 @@ const messages: Record<string, MessageEntry> = {
     fix: () => "Add 'return VALUE' to the task, or call it on its own line.",
   },
 
+  // ---- E4xx: capabilities (Guidebook §7, §9.3) ----
+  E401: {
+    message: (a) => `'${arg(a, "what")}' requires profile '${arg(a, "profile")}'; ${arg(a, "robot")} supports [${arg(a, "supported")}]`,
+    fix: () => "Use a robot whose manifest has this profile, or leave this statement out.",
+  },
+  E402: {
+    message: (a) => `no connected robot has the extension '${arg(a, "name")}'`,
+    fix: (a) => `Use a robot whose manifest lists it, or guard it with if ROBOT.has("${arg(a, "name")}"): and give a fallback in else:.`,
+  },
+  E403: {
+    message: (a) => `more than one connected robot could run '${arg(a, "what")}': ${arg(a, "robots")}`,
+    fix: () => "This statement does not name a robot, so only one connected robot may be able to run it.",
+  },
+  E404: {
+    message: (a) => `no connected robot can run '${arg(a, "what")}', which needs profile '${arg(a, "profile")}'`,
+    fix: () => "Connect a robot whose manifest has this profile.",
+  },
+  E405: {
+    message: () => "no URITP 0.1 robot accepts native code",
+    fix: () => "Use a URITP statement or a vendor extension instead.",
+  },
+
   // ---- E41x: problems in a manifest (Guidebook §9.1) ----
   E410: {
     message: (a) =>
@@ -385,6 +407,16 @@ const messages: Record<string, MessageEntry> = {
   E419: {
     message: () => "a forbidden zone must be zones.NAME or a polygon with fixed corners",
     fix: () => "Write it like: safety forbidden_zone zones.icu, or polygon(pose(0m, 0m, 0m), pose(1m, 0m, 0m), pose(1m, 1m, 0m)).",
+  },
+
+  // ---- W6xx: portability warnings (Guidebook §7) ----
+  W601: {
+    message: (a) => `'${arg(a, "name")}' is used without a ${arg(a, "robot")}.has(...) guard`,
+    fix: (a) => `Put it inside if ${arg(a, "robot")}.has("${arg(a, "name")}"): and give a fallback in else:, so the program also works on other robots.`,
+  },
+  W602: {
+    message: () => "native code works on only one kind of robot, so this program is not portable",
+    fix: () => "Use a URITP statement, profile or extension instead where you can.",
   },
 };
 
