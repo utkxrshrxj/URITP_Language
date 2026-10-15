@@ -1,4 +1,5 @@
 // Tests the runner's clock (real time, optionally sped up) and cancelling a wait, as STOP does.
+// A sped-up clock lets tests cover minutes of program time in a few milliseconds.
 import { describe, expect, it } from "vitest";
 import { CancelSignal, realClock } from "../../src/runtime/clock.js";
 
