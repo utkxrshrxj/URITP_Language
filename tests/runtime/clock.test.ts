@@ -4,9 +4,13 @@ import { describe, expect, it } from "vitest";
 import { CancelSignal, realClock } from "../../src/runtime/clock.js";
 
 describe("realClock", () => {
-  it("starts at zero and moves forward", async () => {
+  it("starts at zero", () => {
+    // At normal speed, so a busy machine cannot make a few milliseconds look like seconds.
+    expect(realClock().now()).toBeLessThan(0.5);
+  });
+
+  it("moves forward as it waits", async () => {
     const clock = realClock({ speed: 1000 });
-    expect(clock.now()).toBeLessThan(0.5);
     await clock.sleep(5);
     expect(clock.now()).toBeGreaterThanOrEqual(4.9);
   });
@@ -16,6 +20,27 @@ describe("realClock", () => {
     const before = Date.now();
     await clock.sleep(30);
     expect(Date.now() - before).toBeLessThan(500);
+  });
+
+  it("never returns early", async () => {
+    for (const seconds of [0.002, 0.005, 0.013]) {
+      const clock = realClock();
+      await clock.sleep(seconds);
+      expect(clock.now()).toBeGreaterThanOrEqual(seconds);
+    }
+  });
+
+  it("can wait longer than one timer allows, until cancelled", async () => {
+    // A single timer cannot wait more than about 24 days; it would fire at once instead.
+    const clock = realClock();
+    const signal = new CancelSignal();
+    let done = false;
+    const waiting = clock.sleep(1e9, signal).then(() => (done = true));
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(done).toBe(false);
+    signal.cancel("STOP");
+    await waiting;
+    expect(done).toBe(true);
   });
 
   it("returns at once for zero or negative waits", async () => {

@@ -47,32 +47,49 @@ interface Timers {
 }
 const timers = globalThis as unknown as Timers;
 
+/** The longest a single timer can wait, in milliseconds; longer waits would fire at once. */
+const LONGEST_TIMER_MS = 2_147_483_647;
+
+/** Milliseconds from a steady source: performance.now() where there is one (browsers and Node). */
+const performanceNow = (globalThis as unknown as { performance?: { now(): number } }).performance;
+const milliseconds = (): number => (performanceNow === undefined ? Date.now() : performanceNow.now());
+
+/** Waits up to `ms` real milliseconds, or less if `signal` is cancelled first. */
+function waitReal(ms: number, signal?: CancelSignal): Promise<void> {
+  return new Promise<void>((resolve) => {
+    let stopListening = (): void => {};
+    const handle = timers.setTimeout(() => {
+      stopListening();
+      resolve();
+    }, ms);
+    if (signal !== undefined) {
+      stopListening = signal.onCancel(() => {
+        timers.clearTimeout(handle);
+        resolve();
+      });
+    }
+  });
+}
+
 /**
  * A clock that follows real time. With `speed` above 1 it runs that many times faster, so a
  * 2 minute wait at speed 1000 takes 0.12 real seconds while the program still sees 2 minutes.
  */
 export function realClock(options: { speed?: number } = {}): Clock {
   const speed = options.speed ?? 1;
-  const start = Date.now();
+  const start = milliseconds();
+  const now = (): number => ((milliseconds() - start) / 1000) * speed;
   return {
-    now: () => ((Date.now() - start) / 1000) * speed,
-    sleep: (seconds, signal) =>
-      new Promise<void>((resolve) => {
-        if (signal?.cancelled === true || seconds <= 0) {
-          resolve();
-          return;
-        }
-        let stopListening = (): void => {};
-        const handle = timers.setTimeout(() => {
-          stopListening();
-          resolve();
-        }, (seconds * 1000) / speed);
-        if (signal !== undefined) {
-          stopListening = signal.onCancel(() => {
-            timers.clearTimeout(handle);
-            resolve();
-          });
-        }
-      }),
+    now,
+    // Waits in pieces, checking the time after each one: timers can fire a little early, and a
+    // single timer cannot wait longer than about 24 days (it would fire at once instead).
+    sleep: async (seconds, signal) => {
+      const end = now() + seconds;
+      while (signal?.cancelled !== true) {
+        const remaining = end - now();
+        if (remaining <= 0) return;
+        await waitReal(Math.min(Math.max(1, (remaining * 1000) / speed), LONGEST_TIMER_MS), signal);
+      }
+    },
   };
 }
