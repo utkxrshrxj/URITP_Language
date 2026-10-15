@@ -27,7 +27,7 @@ updated in the same commit as any change to company code.
 
 | Company | Robot type | Driver folder | Manifest folder | Driver speaks | Status |
 |---|---|---|---|---|---|
-| Universal Robots | Industrial arm (manipulation) | `drivers/universal-robots/` | `manifests/universal-robots/` | URScript-style text | Manifest done; driver in Phase 6 |
+| Universal Robots | Industrial arm (manipulation) | `drivers/universal-robots/` | `manifests/universal-robots/` | URScript-style text | Manifest and simulated driver done |
 | Raspberry Pi | Rover or robot built on a Pi (navigation, vision) | `drivers/raspberry-pi/` | `manifests/raspberry-pi/` | Command messages for a motor and camera service | Manifest done; driver in Phase 6 |
 | Arduino | Small microcontroller rover (core and navigation only) | `drivers/arduino/` | `manifests/arduino/` | Simple serial text protocol | Manifest done; driver in Phase 6 |
 
@@ -36,19 +36,30 @@ are worded, and what is real versus simulated.
 
 ## Universal Robots
 
-- **Folders:** `manifests/universal-robots/` (driver in `drivers/universal-robots/` from Phase 6).
+- **Folders:** `manifests/universal-robots/` and `drivers/universal-robots/`.
 - **Files:**
-  - `ur-arm.uritp`: the arm's manifest.
-  - `README.md`: what each value means and where it comes from.
-  - `manifest.test.ts`: checks the manifest and that programs are accepted or rejected against it.
+  - `manifests/universal-robots/ur-arm.uritp`: the arm's manifest.
+  - `manifests/universal-robots/README.md`: what each value means and where it comes from.
+  - `manifests/universal-robots/manifest.test.ts`: checks the manifest and that programs are accepted or rejected against it.
+  - `drivers/universal-robots/ur-driver.ts`: the simulated driver, writing URScript-style text.
+  - `drivers/universal-robots/urscript.ts`: URScript poses (rotation vectors) and numbers.
+  - `drivers/universal-robots/README.md`: what each instruction becomes, and what it refuses.
+  - `drivers/universal-robots/ur-driver.test.ts`: the driver's tests.
+- **Driver:** moves become `movel(p[...], a=1.2, v=...)`, grips become
+  `gripper_close(...)` and `gripper_open()`, and STOP becomes `stopl(3.0)`.
+  Stopping time 0.5 s, repeatability 0.03 mm.
 - **Manifest:** one `tool` frame (pose6d, reach 850mm, max_speed 1m/s,
   payload 5kg), a `gripper` actuator (open/closed, max_force 100N), a `force`
   sensor, profiles `[core, manipulation]`, and `safety max_speed 0.25m/s`.
 - **Commits are worded** with the company name in the sentence, for example
   "Added a reference arm manifest for Universal Robots".
-- **Real versus simulated:** everything is simulated. The values are typical
-  public figures, marked "replace with datasheet values". The gripper is an
-  assumption, since the arm has none of its own. Native URScript is not
+- **Real versus simulated:** everything is simulated, and nothing has been
+  tested on real hardware. The driver records the URScript-style lines it
+  would send, but sends nothing. The values are typical public figures,
+  marked "replace with datasheet values". `gripper_open` and `gripper_close`
+  stand for the functions of whichever gripper is fitted, since the arm has
+  none of its own. Objects are found only if the simulation knows where they
+  are; a real cell would need a vision system. Native URScript is not
   accepted (DECISIONS.md D20).
 
 ## Raspberry Pi
