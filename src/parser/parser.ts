@@ -9,14 +9,18 @@ import type {
   Argument,
   AskExpression,
   BinaryOperator,
+  AlertStatement,
   Block,
   CallStatement,
+  CaptureStatement,
+  ConfirmStatement,
   DriveStatement,
   Expression,
   GripStatement,
   ImportStatement,
   LandStatement,
   LetStatement,
+  LogStatement,
   MoveStatement,
   PickStatement,
   PlaceStatement,
@@ -24,6 +28,7 @@ import type {
   Program,
   ReturnStatement,
   RobotStatement,
+  SayStatement,
   SprayStatement,
   Statement,
   StopStatement,
@@ -540,6 +545,16 @@ export class Parser {
         return this.parseWeld();
       case "spray":
         return this.parseSpray();
+      case "capture":
+        return this.parseCapture();
+      case "log":
+        return this.parseLog();
+      case "alert":
+        return this.parseAlert();
+      case "say":
+        return this.parseSay();
+      case "confirm":
+        return this.parseConfirm();
       default:
         return this.parseOtherKeyword(token);
     }
@@ -843,6 +858,55 @@ export class Parser {
     const amount = this.parseExpression();
     this.endStatement(form);
     return { kind: "Spray", actuator, target, amount, line: start.line, column: start.column };
+  }
+
+  // ---- Sensing and data (GRAMMAR.md 2.6) ----
+
+  private parseCapture(): CaptureStatement {
+    const form = 'capture SENSOR save as "FILE"';
+    const start = this.advance();
+    const sensor = this.parseExpression();
+    this.expectKeyword("save", form);
+    this.expectKeyword("as", form);
+    const file = this.expectText("a file name in double quotes", form);
+    this.endStatement(form);
+    return { kind: "Capture", sensor, file, line: start.line, column: start.column };
+  }
+
+  private parseLog(): LogStatement {
+    const start = this.advance();
+    const values = [this.parseExpression()];
+    while (this.acceptSymbol(",")) values.push(this.parseExpression());
+    this.endStatement("log VALUE, VALUE, ...");
+    return { kind: "Log", values, line: start.line, column: start.column };
+  }
+
+  private parseAlert(): AlertStatement {
+    const form = 'alert "TEXT"';
+    const start = this.advance();
+    const message = this.expectText("a message in double quotes", form);
+    this.endStatement(form);
+    return { kind: "Alert", message, line: start.line, column: start.column };
+  }
+
+  // ---- Talking to people (GRAMMAR.md 2.7) ----
+
+  private parseSay(): SayStatement {
+    const form = 'say "TEXT" [lang CODE]';
+    const start = this.advance();
+    const message = this.expectText("a message in double quotes", form);
+    const lang = this.parseLang();
+    this.endStatement(form);
+    return { kind: "Say", message, lang, line: start.line, column: start.column };
+  }
+
+  private parseConfirm(): ConfirmStatement {
+    const form = 'confirm "QUESTION" [lang CODE]';
+    const start = this.advance();
+    const question = this.expectText("a question in double quotes", form);
+    const lang = this.parseLang();
+    this.endStatement(form);
+    return { kind: "Confirm", question, lang, line: start.line, column: start.column };
   }
 
   /** Builds the "did you mean ...?" details for a word that is not a statement. */
