@@ -54,12 +54,21 @@ searchable (§8). The English wording lives in
 
 | Code | Meaning | Example that triggers it |
 |---|---|---|
+| E201 | a robot with no manifest to check it against | `robot r = connect("x")` with no manifest given |
 | E202 | a name that is not defined | `let y = targt + 1cm` (did you mean `target`?) |
+| E203 | a robot has no frame with that name (§8) | `move rover.tool to ...` on a rover |
+| E204 | a robot has no actuator with that name | `grip rover.gripper close` on a rover |
+| E205 | a robot has no sensor with that name | `rover.sense("thermal")` |
+| E206 | a robot has no part or property with that name | `log rover.colour` |
 | E207 | a name bound twice in the same block (§4) | `let x = 5cm` then `let x = 6cm` |
 | E208 | a built-in name redefined | `let places = 1` |
+| E209 | a place, zone or route that no site map defines | `places.kitchn` (did you mean `kitchen`?) |
 | E210 | a call of a task or function that does not exist | `pos(1m, 2m, 0m)` (did you mean `pose`?) |
 | E211 | a property that a value does not have | `places.dock.colour` |
 | E212 | a field or shelf map, not supported in URITP 0.1 | `field.row(4)` |
+| E213 | an imported file that cannot be found | `import "missing.uritp"` |
+| E214 | files that import each other in a circle | `a.uritp` imports `b.uritp`, which imports `a.uritp` |
+| E215 | a site map or imported file holding statements it may not | `move` inside `site.uritp` |
 
 ## E3xx: types and units (Phase 3)
 
@@ -74,6 +83,7 @@ searchable (§8). The English wording lives in
 | E308 | a percent outside 0% to 100% | `150%`, `60% + 50%` |
 | E309 | the wrong number of values in brackets | `pose(1m, 2m)` |
 | E310 | a `name=value` argument that does not exist | `pose(1m, 2m, 0m, heading=90deg)` |
+| E311 | `.has()` or `.sense()` without fixed text | `rover.sense(name)` |
 | E313 | a list that mixes kinds of value | `[1cm, 2s]` |
 | E315 | a `{ }` insertion that cannot be shown as text | `"at {p}"` where `p` is a Pose |
 | E317 | `to()` or `round()` without a unit as second value | `to(1.2m, banana)` |
@@ -87,7 +97,6 @@ built in later phases, along with the other codes of their stage.
 
 | Code | Meaning | Phase |
 |---|---|---|
-| E203 | a robot has no frame with that name | 3 |
 | E401 | a command needs a profile the robot does not have | 4 |
 | E502 | a speed is above the robot's safety limit | 4 |
 | W601 | a vendor extension is used without a `.has(...)` guard | 4 |

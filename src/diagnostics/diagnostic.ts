@@ -14,6 +14,8 @@ export interface Diagnostic {
   readonly line: number;
   readonly column: number;
   readonly args: DiagnosticArgs;
+  /** The file the problem is in, when it is not the main program (an import or a site map). */
+  readonly file?: string;
 }
 
 export function makeDiagnostic(
@@ -24,6 +26,11 @@ export function makeDiagnostic(
 ): Diagnostic {
   const severity = code.startsWith("W") ? "warning" : "error";
   return { code, severity, line, column, args };
+}
+
+/** The same diagnostic, marked as coming from another file. */
+export function inFile(diagnostic: Diagnostic, file: string): Diagnostic {
+  return { ...diagnostic, file };
 }
 
 /** The message and the suggested fix for a diagnostic, in the language of the table. */
@@ -42,9 +49,11 @@ export function explain(
  * Formats a diagnostic the way Guidebook §8 shows it:
  *   E101 (line 4): expected ':' after the 'if' condition
  *     Fix: Add ':' at the end of the line.
+ * A problem in another file names it: E209 (site.uritp, line 3): ...
  */
 export function formatDiagnostic(diagnostic: Diagnostic, table: MessageTable = ENGLISH): string {
   const { message, fix } = explain(diagnostic, table);
-  const first = `${diagnostic.code} (line ${diagnostic.line}): ${message}`;
+  const where = diagnostic.file === undefined ? `line ${diagnostic.line}` : `${diagnostic.file}, line ${diagnostic.line}`;
+  const first = `${diagnostic.code} (${where}): ${message}`;
   return fix === "" ? first : `${first}\n  ${table.fixLabel}: ${fix}`;
 }

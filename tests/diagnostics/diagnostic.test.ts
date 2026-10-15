@@ -1,7 +1,7 @@
 // Tests how errors are turned into readable text, in the format Guidebook §8 shows.
 // Also checks that every message gives a fix and never prints "undefined".
 import { describe, expect, it } from "vitest";
-import { explain, formatDiagnostic, makeDiagnostic } from "../../src/diagnostics/diagnostic.js";
+import { explain, formatDiagnostic, inFile, makeDiagnostic } from "../../src/diagnostics/diagnostic.js";
 import { ENGLISH } from "../../src/diagnostics/messages-en.js";
 
 describe("makeDiagnostic", () => {
@@ -18,6 +18,11 @@ describe("formatDiagnostic", () => {
       "E101 (line 4): expected ':' after the 'if' condition\n" +
         "  Fix: Add ':' at the end of the line. A line that opens a block always ends with ':'.",
     );
+  });
+
+  it("names the file when the problem is in another file", () => {
+    const d = inFile(makeDiagnostic("E116", 3, 1, { number: "5." }), "site.uritp");
+    expect(formatDiagnostic(d).split("\n")[0]).toBe("E116 (site.uritp, line 3): '5.' is not a valid number");
   });
 
   it("suggests the closest unit", () => {

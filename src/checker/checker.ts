@@ -1,20 +1,24 @@
 // Checks names, types and units in a parsed program before anything runs (Guidebook §4 and §8).
 // It reports E2xx (names) and E3xx (types and units) problems and never changes the program.
 
-import { makeDiagnostic, type Diagnostic, type DiagnosticArgs } from "../diagnostics/diagnostic.js";
+import { inFile, makeDiagnostic, type Diagnostic, type DiagnosticArgs } from "../diagnostics/diagnostic.js";
 import { closestMatch } from "../diagnostics/suggest.js";
 import type {
   Argument,
   BinaryExpression,
   CallExpression,
+  DefineStatement,
   Expression,
+  ImportStatement,
   MemberAccess,
   Position,
   Program,
+  RobotStatement,
   Statement,
   TextLiteral,
   UnaryExpression,
 } from "../parser/ast.js";
+import { parse } from "../parser/parser.js";
 import {
   ANALYSIS_PROPERTIES,
   ACTUATOR_PROPERTIES,
@@ -26,10 +30,13 @@ import {
   POSE_HELPERS,
   POSITION_PROPERTIES,
   READING_VALUES,
+  ROBOT_METHODS,
+  ROBOT_PROPERTIES,
   type Signature,
 } from "../stdlib/signatures.js";
 import { isUnit, UNITS, type Dimension } from "../stdlib/units.js";
 import { evaluateConstant, type Constant } from "./constants.js";
+import type { RobotModel } from "./robot-model.js";
 import { Scope, type Binding } from "./scope.js";
 import {
   acceptName,
@@ -48,11 +55,39 @@ import {
   UNKNOWN,
   ZONE,
   type Accept,
+  type PartRole,
   type Type,
 } from "./types.js";
 
+/** A file given to the checker as text, like a site map. */
+export interface SourceFile {
+  readonly name: string;
+  readonly source: string;
+}
+
+export interface CheckOptions {
+  /**
+   * Finds the model of a connected robot from its name and connect("ADDRESS"), usually built
+   * from its manifest (Phase 4). A robot without a model cannot be checked, so it is an error.
+   */
+  readonly robots?: (name: string, address: string) => RobotModel | undefined;
+  /** Site maps loaded before the program, such as site.uritp next to it (DECISIONS.md D16). */
+  readonly siteMaps?: readonly SourceFile[];
+  /**
+   * Reads a file named in an import, or returns null if there is none. Passing this in keeps
+   * the checker free of Node-only file access, so it can also run in a browser.
+   */
+  readonly readFile?: (path: string) => string | null;
+}
+
 export interface CheckResult {
   readonly diagnostics: Diagnostic[];
+}
+
+/** A place, zone or route from a site map. */
+interface SiteEntry {
+  readonly type: Type;
+  readonly line: number;
 }
 
 /** The unit suggested when a bare number is given for a dimension (TYPES_AND_UNITS.md section 4). */
@@ -78,20 +113,40 @@ const OPERATOR_WORDS: Readonly<Record<string, string>> = { "+": "add", "-": "sub
 interface ValueContext {
   /** True where an object the robot finds by itself may appear, like a move target (DECISIONS.md D4). */
   readonly objectAllowed?: boolean;
+  /** The kind of robot part wanted here, so a missing part gets the right message (E203 to E205). */
+  readonly role?: PartRole;
 }
+
+const MISSING_PART_CODE: Readonly<Record<PartRole, string>> = { frame: "E203", actuator: "E204", sensor: "E205" };
 
 export class Checker {
   readonly diagnostics: Diagnostic[] = [];
   protected scope = new Scope();
   /** Fixed values of names bound with let, like let gap = 5cm. */
   private readonly constants = new WeakMap<Binding, Constant>();
+  /** The model of each connected robot, or null if none was found (E201 already reported). */
+  protected readonly robots = new Map<string, RobotModel | null>();
+  /** Places, zones and routes defined so far, from site maps and define lines. */
+  private readonly site = {
+    places: new Map<string, SiteEntry>(),
+    zones: new Map<string, SiteEntry>(),
+    route: new Map<string, SiteEntry>(),
+  };
+  /** The file being checked when it is not the main program. */
+  private currentFile: string | undefined;
+  /** Files being imported right now, to catch files that import each other (E214). */
+  private readonly importChain: string[] = [];
+  private readonly imported = new Set<string>();
+
+  constructor(private readonly options: CheckOptions = {}) {}
 
   // -------------------------------------------------------------------------
   // Reporting
   // -------------------------------------------------------------------------
 
   protected report(code: string, at: Position, args: DiagnosticArgs = {}): void {
-    this.diagnostics.push(makeDiagnostic(code, at.line, at.column, args));
+    const diagnostic = makeDiagnostic(code, at.line, at.column, args);
+    this.diagnostics.push(this.currentFile === undefined ? diagnostic : inFile(diagnostic, this.currentFile));
   }
 
   /** The diagnostics without repeats; a task checked several times may find the same thing twice. */
@@ -99,12 +154,12 @@ export class Checker {
     const seen = new Set<string>();
     return this.diagnostics
       .filter((d) => {
-        const key = `${d.code}|${d.line}|${d.column}|${JSON.stringify(d.args)}`;
+        const key = `${d.file ?? ""}|${d.code}|${d.line}|${d.column}|${JSON.stringify(d.args)}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       })
-      .sort((a, b) => a.line - b.line || a.column - b.column);
+      .sort((a, b) => (a.file ?? "").localeCompare(b.file ?? "") || a.line - b.line || a.column - b.column);
   }
 
   // -------------------------------------------------------------------------
@@ -112,7 +167,43 @@ export class Checker {
   // -------------------------------------------------------------------------
 
   checkProgram(program: Program): void {
+    for (const siteMap of this.options.siteMaps ?? []) this.checkOtherFile(siteMap.name, siteMap.source, "site map");
     for (const statement of program.statements) this.checkStatement(statement);
+  }
+
+  /**
+   * Checks a site map or imported file. Its diagnostics name the file. A site map may only
+   * hold define lines (D16); an imported file may also hold tasks and imports (Guidebook §5).
+   */
+  private checkOtherFile(name: string, source: string, kind: "site map" | "import"): void {
+    const parsed = parse(source);
+    for (const d of parsed.diagnostics) this.diagnostics.push(inFile(d, name));
+    const outerFile = this.currentFile;
+    const outerScope = this.scope;
+    this.currentFile = name;
+    this.scope = new Scope();
+    try {
+      for (const statement of parsed.program.statements) {
+        const allowed = statement.kind === "Define" || (kind === "import" && (statement.kind === "Task" || statement.kind === "Import"));
+        if (!allowed) {
+          this.report("E215", statement, {
+            file: name,
+            allowed: kind === "site map" ? "define lines" : "define, task and import lines",
+          });
+          continue;
+        }
+        this.checkStatement(statement);
+      }
+    } finally {
+      // Tasks from an imported file become available to the file that imported it.
+      const fileScope = this.scope;
+      this.currentFile = outerFile;
+      this.scope = outerScope;
+      for (const [taskName, binding] of fileScope.ownBindings()) {
+        const earlier = this.scope.define(taskName, binding);
+        if (earlier !== undefined) this.report("E207", { line: 1, column: 1 }, { name: taskName, line: String(earlier.line) });
+      }
+    }
   }
 
   protected checkStatement(statement: Statement): void {
@@ -126,8 +217,77 @@ export class Checker {
         }
         return;
       }
+      case "Robot":
+        this.checkRobot(statement);
+        return;
+      case "Define":
+        this.checkDefine(statement);
+        return;
+      case "Import":
+        this.checkImport(statement);
+        return;
       default:
         return;
+    }
+  }
+
+  /** robot NAME = connect("ADDRESS"): finds the robot's model so its parts can be checked. */
+  private checkRobot(statement: RobotStatement): void {
+    const address = statement.address.parts.map((p) => (p.kind === "literal" ? p.text : "")).join("");
+    const model = this.options.robots?.(statement.name, address);
+    if (model === undefined) this.report("E201", statement, { robot: statement.name, address });
+    if (this.bind(statement.name, { kind: "Robot", robot: statement.name }, statement) !== undefined) {
+      this.robots.set(statement.name, model ?? null);
+    }
+  }
+
+  /** define place|zone|route NAME = VALUE, from a site map or the program itself. */
+  private checkDefine(statement: DefineStatement): void {
+    let type: Type;
+    if (statement.what === "place") {
+      this.expectValue(statement.value, [{ kind: "Pose" }], `place '${statement.name}'`);
+      type = { kind: "Place" };
+    } else if (statement.what === "zone") {
+      this.expectValue(statement.value, [{ kind: "Zone" }], `zone '${statement.name}'`);
+      type = ZONE;
+    } else {
+      const value = this.checkValue(statement.value);
+      const item = value.kind === "List" ? value.item : null;
+      if (item !== null && item.kind !== "Pose" && item.kind !== "Place" && item.kind !== "Unknown") {
+        this.report("E306", statement.value, { slot: `route '${statement.name}'`, expected: "a List of Place or Pose", got: typeName(value) });
+      } else if (value.kind !== "List" && value.kind !== "Unknown") {
+        this.report("E306", statement.value, { slot: `route '${statement.name}'`, expected: "a List of Place or Pose", got: typeName(value) });
+      }
+      type = { kind: "Route", item: item?.kind === "Pose" ? "Pose" : "Place" };
+    }
+    const table = statement.what === "place" ? this.site.places : statement.what === "zone" ? this.site.zones : this.site.route;
+    const earlier = table.get(statement.name);
+    if (earlier !== undefined) {
+      this.report("E207", statement, { name: `${statement.what} ${statement.name}`, line: String(earlier.line) });
+      return;
+    }
+    table.set(statement.name, { type, line: statement.line });
+  }
+
+  /** import "FILE.uritp": loads its places, zones, routes and tasks. */
+  private checkImport(statement: ImportStatement): void {
+    const file = statement.path.parts.map((p) => (p.kind === "literal" ? p.text : "")).join("");
+    if (this.importChain.includes(file)) {
+      this.report("E214", statement, { file, chain: [...this.importChain, file].join(" -> ") });
+      return;
+    }
+    if (this.imported.has(file)) return; // already loaded once; loading it again changes nothing
+    const source = this.options.readFile?.(file) ?? null;
+    if (source === null) {
+      this.report("E213", statement, { file });
+      return;
+    }
+    this.imported.add(file);
+    this.importChain.push(file);
+    try {
+      this.checkOtherFile(file, source, "import");
+    } finally {
+      this.importChain.pop();
     }
   }
 
@@ -166,7 +326,9 @@ export class Checker {
    */
   protected expectValue(expr: Expression, accepts: readonly Accept[], slot: string): Type {
     const objectAllowed = accepts.some((a) => a.kind === "Object");
-    const type = this.checkValue(expr, { objectAllowed });
+    const wanted = accepts.find((a) => a.kind === "Frame" || a.kind === "Actuator" || a.kind === "Sensor");
+    const role = wanted === undefined ? undefined : (wanted.kind.toLowerCase() as PartRole);
+    const type = this.checkValue(expr, role === undefined ? { objectAllowed } : { objectAllowed, role });
     if (fitsAny(type, accepts)) return type;
     if (type.kind === "Number") {
       const wanted = accepts.find((a) => a.kind === "Quantity");
@@ -220,7 +382,7 @@ export class Checker {
       case "Name":
         return this.checkName(expr.name, expr, context);
       case "Member":
-        return this.checkMember(expr);
+        return this.checkMember(expr, context);
       case "Call":
         return this.checkCall(expr);
       case "List":
@@ -290,21 +452,25 @@ export class Checker {
     return null;
   }
 
-  protected checkMember(expr: MemberAccess): Type {
+  protected checkMember(expr: MemberAccess, context: ValueContext = {}): Type {
     const name = expr.name;
     // An unknown name in front of an object property is an object, like mug.fill (D4).
     const objectAllowed = OBJECT_PROPERTIES[name] !== undefined || POSITION_PROPERTIES[name] !== undefined;
     const owner = this.checkValue(expr.object, { objectAllowed });
-    return this.memberOf(owner, name, expr);
+    return this.memberOf(owner, name, expr, context.role);
   }
 
   /** The type of `owner.name`, or UNKNOWN after reporting why there is no such property. */
-  protected memberOf(owner: Type, name: string, at: Position): Type {
+  protected memberOf(owner: Type, name: string, at: Position, role?: PartRole): Type {
     const found = (table: Readonly<Record<string, Type>>): Type | undefined => table[name];
     let result: Type | undefined;
     switch (owner.kind) {
       case "Unknown":
         return UNKNOWN;
+      case "Robot":
+        return this.robotMember(owner.robot, name, at, role);
+      case "Namespace":
+        return this.siteMember(owner.namespace, name, at);
       case "Part":
         if (owner.roles.includes("actuator")) result = found(ACTUATOR_PROPERTIES);
         break;
@@ -343,6 +509,45 @@ export class Checker {
     return UNKNOWN;
   }
 
+  /** rover.base, arm.gripper, drone.battery and so on. */
+  private robotMember(robot: string, name: string, at: Position, role?: PartRole): Type {
+    const property = ROBOT_PROPERTIES[name];
+    if (property !== undefined) return property;
+    if (name === "frames") return listOf({ kind: "Part", robot, part: "", roles: ["frame"] });
+    if ((ROBOT_METHODS as readonly string[]).includes(name)) {
+      this.report("E211", at, { owner: "a Robot", name, fix: `Call it with brackets, like ${robot}.${name}("NAME").` });
+      return UNKNOWN;
+    }
+    const model = this.robots.get(robot);
+    if (model === undefined || model === null) return UNKNOWN; // E201 has already been reported
+    const roles: PartRole[] = [];
+    if (model.frames[name] !== undefined) roles.push("frame");
+    if (model.actuators[name] !== undefined) roles.push("actuator");
+    if (model.sensors[name] !== undefined) roles.push("sensor");
+    if (roles.length > 0) return { kind: "Part", robot, part: name, roles };
+
+    const names = (role: PartRole): string[] =>
+      Object.keys(role === "frame" ? model.frames : role === "actuator" ? model.actuators : model.sensors);
+    const candidates = role === undefined ? [...names("frame"), ...names("actuator"), ...names("sensor")] : names(role);
+    this.report(role === undefined ? "E206" : MISSING_PART_CODE[role], at, {
+      robot,
+      name,
+      suggestion: closestMatch(name, candidates) ?? "",
+      known: candidates.join(", "),
+    });
+    return UNKNOWN;
+  }
+
+  /** places.NAME, zones.NAME and route.NAME from the site map. */
+  private siteMember(namespace: "places" | "zones" | "route", name: string, at: Position): Type {
+    const table = this.site[namespace];
+    const entry = table.get(name);
+    if (entry !== undefined) return entry.type;
+    const kind = namespace === "places" ? "place" : namespace === "zones" ? "zone" : "route";
+    this.report("E209", at, { kind, name, suggestion: closestMatch(name, [...table.keys()]) ?? "" });
+    return UNKNOWN;
+  }
+
   protected checkCall(call: CallExpression): Type {
     const callee = call.callee;
     if (callee.kind === "Name") {
@@ -364,14 +569,21 @@ export class Checker {
     return UNKNOWN;
   }
 
-  /** A call like obj.above(10cm) or reading.analyse(cup). */
+  /** A call like obj.above(10cm), reading.analyse(cup), rover.sense("x") or vendor.feature(...). */
   protected checkMethodCall(callee: MemberAccess, call: CallExpression): Type {
     const name = callee.name;
+    if (this.isExtensionCall(callee)) {
+      // A vendor extension such as examplecorp.adaptive_weld(...). Phase 4 checks it against
+      // the manifests (D18); here only its arguments are checked.
+      this.checkArgumentsLoosely(call.args, { objectAllowed: true });
+      return UNKNOWN;
+    }
     const owner = this.checkValue(callee.object, { objectAllowed: POSE_HELPERS[name] !== undefined });
     if (owner.kind === "Unknown") {
       this.checkArgumentsLoosely(call.args);
       return UNKNOWN;
     }
+    if (owner.kind === "Robot" && (name === "has" || name === "sense")) return this.checkRobotMethod(owner.robot, name, call);
     const helper = POSE_HELPERS[name];
     if (helper !== undefined && (owner.kind === "Pose" || owner.kind === "Place" || owner.kind === "Object")) {
       this.checkArguments(call, helper, `.${name}`);
@@ -384,6 +596,48 @@ export class Checker {
     this.checkArgumentsLoosely(call.args);
     this.report("E211", callee, { owner: typeName(owner), name, fix: "" });
     return UNKNOWN;
+  }
+
+  /**
+   * vendor.feature(...): the vendor is a name that is not bound and not built in, and the
+   * feature is not a standard helper (cup.above(10cm) is an object, not an extension).
+   */
+  private isExtensionCall(callee: MemberAccess): boolean {
+    const vendor = callee.object;
+    if (vendor.kind !== "Name") return false;
+    const standard = POSE_HELPERS[callee.name] !== undefined || callee.name === "analyse" ||
+      (ROBOT_METHODS as readonly string[]).includes(callee.name);
+    if (standard) return false;
+    if (this.scope.lookup(vendor.name) !== undefined) return false;
+    return !BUILT_IN_NAMES.includes(vendor.name);
+  }
+
+  /** robot.has("NAME") gives Bool; robot.sense("NAME") gives a Reading from that sensor. */
+  private checkRobotMethod(robot: string, name: "has" | "sense", call: CallExpression): Type {
+    this.rejectNamedArguments(call.args, `.${name}`);
+    const [first] = call.args;
+    if (call.args.length !== 1 || first === undefined) {
+      this.report("E309", call, { what: `.${name}()`, expected: "1", got: String(call.args.length) });
+      this.checkArgumentsLoosely(call.args);
+      return name === "has" ? BOOL : UNKNOWN;
+    }
+    const text = first.value;
+    if (text.kind !== "Text" || text.parts.some((p) => p.kind === "insert")) {
+      this.checkValue(text);
+      this.report("E311", first, { what: `.${name}()` });
+      return name === "has" ? BOOL : UNKNOWN;
+    }
+    if (name === "has") return BOOL;
+    const sensor = text.parts.map((p) => (p.kind === "literal" ? p.text : "")).join("");
+    const model = this.robots.get(robot);
+    if (model === undefined || model === null) return UNKNOWN;
+    const found = model.sensors[sensor];
+    if (found === undefined) {
+      const known = Object.keys(model.sensors);
+      this.report("E205", first, { robot, name: sensor, suggestion: closestMatch(sensor, known) ?? "", known: known.join(", ") });
+      return UNKNOWN;
+    }
+    return { kind: "Reading", dimension: found.dimension };
   }
 
   protected checkBuiltInCall(name: string, signature: Signature, call: CallExpression): Type {
@@ -574,8 +828,8 @@ function literalText(expr: Expression): string | null {
 }
 
 /** Checks a parsed program and returns every name, type and unit problem found. */
-export function check(program: Program): CheckResult {
-  const checker = new Checker();
+export function check(program: Program, options: CheckOptions = {}): CheckResult {
+  const checker = new Checker(options);
   checker.checkProgram(program);
   return { diagnostics: checker.uniqueDiagnostics() };
 }

@@ -31,6 +31,11 @@ export class Scope {
     return this.names.get(name) ?? this.parent?.lookup(name);
   }
 
+  /** The names bound in this block itself (not enclosing ones), in the order they were bound. */
+  ownBindings(): [string, Binding][] {
+    return [...this.names];
+  }
+
   /** Every name visible from here, for "did you mean ...?" hints. */
   visibleNames(): string[] {
     return [...this.names.keys(), ...(this.parent?.visibleNames() ?? [])];
