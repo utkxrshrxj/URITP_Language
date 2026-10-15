@@ -127,6 +127,7 @@ are worded, and what is real versus simulated.
   - `drivers/arduino/arduino-driver.ts`: the simulated driver.
   - `drivers/arduino/serial-protocol.ts`: the serial lines and whole-number conversions.
   - `drivers/arduino/README.md`: the protocol, and what it refuses.
+  - `drivers/arduino/index.ts`: the entry point the command line and conformance tests use to create the driver.
   - `drivers/arduino/arduino-driver.test.ts`: the driver's tests.
 - **Driver:** each instruction becomes short serial lines in whole
   millimetres and hundredths of a degree: `F 500 100`, `L 9000 2865`,

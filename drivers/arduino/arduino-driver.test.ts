@@ -9,6 +9,7 @@ import { realClock } from "../../src/runtime/clock.js";
 import { lifecycleProblem, runTask } from "../../src/runtime/robot-port.js";
 import { runProgram } from "../../src/runtime/run-program.js";
 import { ArduinoDriver } from "./arduino-driver.js";
+import { createDriver } from "./index.js";
 import { driveLine, shortestTurn, turnLine } from "./serial-protocol.js";
 
 const manifestSource = readFileSync(new URL("../../manifests/arduino/arduino-rover.uritp", import.meta.url), "utf8");
@@ -95,5 +96,9 @@ describe("Arduino rover driver", () => {
     expect(result?.state).toBe("succeeded");
     const motion = driver.transport.lines.filter((line) => !line.startsWith("Q"));
     expect(motion).toEqual([...Array(6).fill("F 50 100"), "L 18000 2865"]);
+  });
+
+  it("is created through its folder's entry point, as tools find it", () => {
+    expect(createDriver({ model })).toBeInstanceOf(ArduinoDriver);
   });
 });
