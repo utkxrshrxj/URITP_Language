@@ -11,10 +11,11 @@ robots like an adapter:
    explanation and a suggested fix.
 4. A robot driver carries out the checked instructions.
 
-> **Status:** programs are fully checked against their robots' manifests and
-> run on simulated drivers for Universal Robots, Raspberry Pi and Arduino
-> robots (Phases 2 to 6). The voice and text layer comes next. No driver has
-> been tested on real hardware.
+> **Status:** requests in English, Hindi or Hinglish are translated into
+> URITP, fully checked against the robots' manifests, and run on simulated
+> drivers for Universal Robots, Raspberry Pi and Arduino robots (Phases 2 to
+> 7). The command line and conformance tests come next. No driver has been
+> tested on real hardware.
 
 ## Quick start
 
@@ -38,6 +39,34 @@ npm test
   the Guidebook needed a decision, and ideas that were not adopted.
 - [spec/ERRORS.md](spec/ERRORS.md): every error code and what triggers it.
 - [examples/](examples/): the six example programs, cleaned up so they parse.
+
+## Talking to a robot
+
+A request goes through three steps, and the checker always has the last word
+(spec/DECISIONS.md D40):
+
+1. **Translate.** One of two translators turns the request into URITP:
+   - The **offline translator** knows a few dozen phrases in English, Hindi
+     and Hinglish, such as "rasoi mein jao" or "laal gend uthao aur tokri
+     mein rakho". It needs no key, and it says so plainly when it does not
+     understand.
+   - The **AI translator** uses Claude (`claude-opus-5-5`) through the official
+     Anthropic SDK. It is used only when the `ANTHROPIC_API_KEY` environment
+     variable is set; `URITP_AI_MODEL` can choose another model.
+2. **Check.** The program goes through every check a hand-written program
+   does. Anything wrong or unsafe is rejected, with its error codes, before
+   any robot moves.
+3. **Run.** Only then does the robot receive its instructions.
+
+To try it in a browser, with a simulated rover and speech input where the
+browser supports it:
+
+```bash
+npm run demo
+```
+
+Then open http://localhost:5173/. The demo uses only the offline translator,
+since a web page must never hold an API key.
 
 ## Project layout
 
@@ -77,8 +106,8 @@ any of these companies. See [docs/COMPANIES.md](docs/COMPANIES.md).
 | 4 | Manifests, capabilities and safety (E4xx, E5xx, W6xx) | Done |
 | 5 | Code generation and runner | Done |
 | 6 | Drivers for the three companies | Done (simulator only) |
-| 7 | Voice and text layer | Next |
-| 8 | Command line, conformance tests, Hindi messages, v0.1.0 | |
+| 7 | Voice and text layer | Done |
+| 8 | Command line, conformance tests, Hindi messages, v0.1.0 | Next |
 
 ## License
 
