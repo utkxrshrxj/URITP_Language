@@ -74,10 +74,11 @@ export interface SourceFile {
 
 export interface CheckOptions {
   /**
-   * Finds the model of a connected robot from its name and connect("ADDRESS"), usually built
-   * from its manifest (Phase 4). A robot without a model cannot be checked, so it is an error.
+   * Finds the model of a connected robot from its name and connect("ADDRESS"), built from its
+   * manifest. undefined means there is no manifest, which is an error (D26); null means the
+   * manifest has errors of its own, which have already been reported.
    */
-  readonly robots?: (name: string, address: string) => RobotModel | undefined;
+  readonly robots?: (name: string, address: string) => RobotModel | null | undefined;
   /** Site maps loaded before the program, such as site.uritp next to it (DECISIONS.md D16). */
   readonly siteMaps?: readonly SourceFile[];
   /**
