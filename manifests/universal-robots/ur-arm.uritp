@@ -1,0 +1,12 @@
+# Company: Universal Robots
+# Reference manifest for a Universal Robots e-Series style arm, run in simulator mode only.
+# Written from public documentation. Values are illustrative: replace with datasheet values
+# before using it with a real robot. Not tested on real hardware.
+# The gripper is not part of the arm itself; it stands for a two-finger gripper on the tool flange.
+manifest "Universal Robots arm (reference, simulated)":
+    uritp 0.1
+    frame tool: pose6d reach 850mm max_speed 1m/s payload 5kg
+    actuator gripper: states [open, closed] max_force 100N
+    sensor force: wrench dimension Force
+    profiles [core, manipulation]
+    safety max_speed 0.25m/s
