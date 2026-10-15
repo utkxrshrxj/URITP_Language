@@ -20,6 +20,9 @@ npm-debug.log*
 # Your own copy of the tutorial's programs (docs/TUTORIAL.md, section 1.4)
 my-tutorial/
 
+# PDF copies of the Markdown files, kept only on this computer
+md to pdf/
+
 # Editor and system files
 .DS_Store
 .vscode/
