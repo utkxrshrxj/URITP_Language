@@ -23,6 +23,12 @@ const FILES: Record<string, string> = {
   "work/side-by-side.uritp": lines('robot a = connect("x")', 'robot b = connect("y")', "parallel:", "    drive a.base forward by 1m", "    drive b.base forward by 2m"),
   "work/safe.uritp": lines('robot rover = connect("lab:rover")', "safety:", "    stop rover when rover.battery < 20%", "drive rover.base forward by 1m speed 0.2m/s"),
   "manifests/acme/rover.uritp": ROVER,
+  "manifests/acme/careful.uritp": lines(ROVER, "    safety forbidden_zone zones.pit"),
+  "work/imports.uritp": lines('import "map.uritp"', 'robot rover = connect("lab:rover")', "move rover.base to places.far"),
+  "work/map.uritp": lines(
+    "define place far = pose(4m, 0m, 0m)",
+    "define zone pit = polygon(pose(1m, -1m, 0m), pose(2m, -1m, 0m), pose(2m, 1m, 0m), pose(1m, 1m, 0m))",
+  ),
 };
 
 /** Runs the command line with in-memory files and returns what it printed and its exit code. */
@@ -111,6 +117,12 @@ describe("uritp run", () => {
     expect(output).toContain(lines("rover <- MOVE frame=base target=pose(1,0,0,0,0,0) speed=0.2", "rover -> succeeded"));
     expect(output).toContain("The program ended: succeeded.");
     expect(output).toContain("Lines the rover driver would send (simulator only, not tested on real hardware):");
+  });
+
+  it("gives drivers the zones from imported files, so a forbidden zone there is kept out of", async () => {
+    const { code, output } = await cli(["run", "work/imports.uritp", "--robot", "manifests/acme/careful.uritp"], async () => createPlain);
+    expect(code).toBe(1);
+    expect(output).toContain("move failed: no straight path to the target stays out of zone 'pit'");
   });
 
   it("names the robot on each result line, so parallel results can be told apart", async () => {

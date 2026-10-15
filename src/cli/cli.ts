@@ -61,6 +61,8 @@ interface Loaded {
   readonly check: ProgramCheckResult;
   readonly manifestPaths: Readonly<Record<string, string>>;
   readonly siteMaps: readonly SourceFile[];
+  /** The files the program imports, which can define places and zones too. */
+  readonly imports: readonly SourceFile[];
   readonly readFile: (path: string) => string | null;
 }
 
@@ -129,14 +131,34 @@ function load(options: CliOptions, io: CliIO): Loaded | string {
 
   const readFile = (path: string): string | null => io.readFile(join(here, path));
   const check = checkProgram({ program: { name: options.file, source }, manifests, siteMaps, readFile });
-  return { check, manifestPaths, siteMaps, readFile };
+  return { check, manifestPaths, siteMaps, imports: importedFiles(source, readFile), readFile };
+}
+
+/** The files a program imports, and the files they import in turn. */
+function importedFiles(source: string, readFile: (path: string) => string | null): SourceFile[] {
+  const files: SourceFile[] = [];
+  const seen = new Set<string>();
+  const visit = (text: string): void => {
+    for (const s of parse(text).program.statements) {
+      if (s.kind !== "Import") continue;
+      const path = s.path.parts.map((part) => (part.kind === "literal" ? part.text : "")).join("");
+      if (seen.has(path)) continue;
+      seen.add(path);
+      const imported = readFile(path);
+      if (imported === null) continue;
+      files.push({ name: path, source: imported });
+      visit(imported);
+    }
+  };
+  visit(source);
+  return files;
 }
 
 function printDiagnostics(diagnostics: readonly Diagnostic[], table: MessageTable, io: CliIO): void {
   for (const d of diagnostics) io.print(formatDiagnostic(d, table));
 }
 
-/** The corners of every zone the site maps define, for drivers that must stay out of them. */
+/** The corners of every zone the site maps and imported files define, for drivers that must stay out of them. */
 function zonesFrom(siteMaps: readonly SourceFile[]): Record<string, Corner[]> {
   const places = new Map<string, Point>();
   const zones: Record<string, Corner[]> = {};
@@ -160,7 +182,7 @@ function zonesFrom(siteMaps: readonly SourceFile[]): Record<string, Corner[]> {
 async function compile(loaded: Loaded, options: CliOptions, io: CliIO): Promise<number> {
   const words = WORDS[options.lang];
   const clock = io.clock?.(100_000) ?? realClock({ speed: 100_000 });
-  const zones = zonesFrom(loaded.siteMaps);
+  const zones = zonesFrom([...loaded.siteMaps, ...loaded.imports]);
   const drivers: Record<string, Driver> = {};
   for (const [name, model] of loaded.check.models) drivers[name] = createPlainDriver({ model, zones, clock });
   const runner = makeRunner(loaded, drivers, clock, io, false);
@@ -184,7 +206,7 @@ async function run(loaded: Loaded, options: CliOptions, io: CliIO): Promise<numb
   const words = WORDS[options.lang];
   const table = options.lang === "hi" ? HINDI : ENGLISH;
   const clock = io.clock?.(options.speed) ?? realClock({ speed: options.speed });
-  const zones = zonesFrom(loaded.siteMaps);
+  const zones = zonesFrom([...loaded.siteMaps, ...loaded.imports]);
   const drivers: Record<string, Driver> = {};
   for (const [name, model] of loaded.check.models) {
     // A manifest in manifests/<folder>/ uses the driver in drivers/<folder>/ when there is one.
