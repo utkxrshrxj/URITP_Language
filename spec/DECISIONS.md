@@ -823,3 +823,6 @@ them is part of URITP v0.1. The compiler rejects programs that use them.
 | Manifest entries for actuator properties and analysis result fields | D10, D11 |
 | Manifest entries for native languages and stopping time | D20 |
 | Writing units with `/` in `to()`, e.g. `to(x, "km/h")` | D23 |
+| `define floor` and `define obstacle` in site maps: the area a floor robot must stay inside, and areas it never drives into | The URITP playground |
+| `on fail:` in the middle of a block, protecting the lines above it, with the block going on afterwards | The URITP playground |
+| `pick` and `place` with places as the things to pick, e.g. `pick places.plate using picker onto places.jig` | The URITP playground |
