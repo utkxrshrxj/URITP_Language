@@ -29,7 +29,7 @@ updated in the same commit as any change to company code.
 |---|---|---|---|---|---|
 | Universal Robots | Industrial arm (manipulation) | `drivers/universal-robots/` | `manifests/universal-robots/` | URScript-style text | Manifest and simulated driver done |
 | Raspberry Pi | Rover or robot built on a Pi (navigation, vision) | `drivers/raspberry-pi/` | `manifests/raspberry-pi/` | Command messages for a motor and camera service | Manifest and simulated driver done |
-| Arduino | Small microcontroller rover (core and navigation only) | `drivers/arduino/` | `manifests/arduino/` | Simple serial text protocol | Manifest done; driver in Phase 6 |
+| Arduino | Small microcontroller rover (core and navigation only) | `drivers/arduino/` | `manifests/arduino/` | Simple serial text protocol | Manifest and simulated driver done |
 
 Each company's section below lists its files, its manifest, how its commits
 are worded, and what is real versus simulated.
@@ -90,16 +90,27 @@ are worded, and what is real versus simulated.
 
 ## Arduino
 
-- **Folders:** `manifests/arduino/` (driver in `drivers/arduino/` from Phase 6).
+- **Folders:** `manifests/arduino/` and `drivers/arduino/`.
 - **Files:**
-  - `arduino-rover.uritp`: the rover's manifest.
-  - `README.md`: what each value means and where it comes from.
-  - `manifest.test.ts`: checks the manifest and that programs are accepted or rejected against it.
+  - `manifests/arduino/arduino-rover.uritp`: the rover's manifest.
+  - `manifests/arduino/README.md`: what each value means and where it comes from.
+  - `manifests/arduino/manifest.test.ts`: checks the manifest and that programs are accepted or rejected against it.
+  - `drivers/arduino/arduino-driver.ts`: the simulated driver.
+  - `drivers/arduino/serial-protocol.ts`: the serial lines and whole-number conversions.
+  - `drivers/arduino/README.md`: the protocol, and what it refuses.
+  - `drivers/arduino/arduino-driver.test.ts`: the driver's tests.
+- **Driver:** each instruction becomes short serial lines in whole
+  millimetres and hundredths of a degree: `F 500 100`, `L 9000 2865`,
+  `Q DF`. A move to a pose is turn, drive straight, turn. STOP sends `S`.
+  Stopping time 0.2 s, repeatability 5 mm.
 - **Manifest:** one `base` frame (pose2d, max_speed 0.3m/s, payload 0.5kg),
   a `distance_front` sensor (Length), profiles `[core, navigation]` only, and
   `safety max_speed 0.2m/s`.
 - **Commits are worded** with the company name in the sentence, for example
   "Added a reference rover manifest for Arduino".
-- **Real versus simulated:** everything is simulated. An Arduino rover is
-  built from parts its maker chooses, so the values are illustrative and
-  marked "replace with datasheet values".
+- **Real versus simulated:** everything is simulated, and nothing has been
+  tested on real hardware. The driver records the serial lines it would
+  send, but no serial port is opened; the protocol is a suggested design for
+  the rover's sketch, not existing firmware. An Arduino rover is built from
+  parts its maker chooses, so the values are illustrative and marked
+  "replace with datasheet values".
