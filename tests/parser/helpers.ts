@@ -1,4 +1,5 @@
 // Test helpers for parsing whole programs: join lines, list error codes, and require a clean parse.
+// Shared by the parser tests so each test file stays short.
 import { expect } from "vitest";
 import type { Program } from "../../src/parser/ast.js";
 import { parse } from "../../src/parser/parser.js";

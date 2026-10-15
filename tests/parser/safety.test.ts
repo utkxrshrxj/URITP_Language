@@ -1,4 +1,5 @@
 // Tests safety: blocks and their rules, the native escape hatch, and define lines for site maps.
+// Includes the old when-block form from example iii and the returnhome typo.
 import { describe, expect, it } from "vitest";
 import { parse } from "../../src/parser/parser.js";
 import { codes, kinds, lines, parseClean } from "./helpers.js";

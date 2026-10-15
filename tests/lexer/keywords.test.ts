@@ -1,4 +1,5 @@
 // Checks the keyword lists against Guidebook §3, so a reserved word is never missed.
+// Also checks that manifest-only words and built-in names are not reserved in programs.
 import { describe, expect, it } from "vitest";
 import { KEYWORDS, MANIFEST_KEYWORDS, isKeyword } from "../../src/lexer/keywords.js";
 

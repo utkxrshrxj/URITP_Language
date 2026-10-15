@@ -1,4 +1,5 @@
 // Tests text in double quotes, including {name} insertions and the errors for broken text.
+// Covers unclosed quotes, bad insertions and stray braces (E112 to E114).
 import { describe, expect, it } from "vitest";
 import type { Diagnostic } from "../../src/diagnostics/diagnostic.js";
 import { tokenizeLine } from "../../src/lexer/line.js";
