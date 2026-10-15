@@ -52,7 +52,7 @@ import type {
 } from "./ast.js";
 
 /** Thrown to give up on the current statement after an error has been recorded. */
-class ParseError extends Error {}
+export class ParseError extends Error {}
 
 const COMPARISON_OPERATORS = ["==", "!=", "<", "<=", ">", ">="];
 
@@ -475,7 +475,7 @@ export class Parser {
    * Skips the rest of a broken statement: up to the end of its line, plus any block
    * that belongs to it (and the elif/else parts of a broken if).
    */
-  private synchronize(): void {
+  protected synchronize(): void {
     let depth = 0;
     for (;;) {
       const token = this.peek();

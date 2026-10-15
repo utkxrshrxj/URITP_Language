@@ -49,6 +49,7 @@ searchable (§8). The English wording lives in
 | E129 | `ask` used anywhere but `let NAME = ask ...` | `say ask "q"` |
 | E130 | `{ }` in text that must be fixed | `connect("sim:{name}")` |
 | E131 | a safety rule with an action that does not exist | `returnhome drone when ...` |
+| E132 | a manifest line that is not a manifest entry | `sensors camera: rgb` (did you mean `sensor`?) |
 
 ## E2xx: names (Phase 3)
 

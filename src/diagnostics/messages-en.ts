@@ -147,6 +147,13 @@ const messages: Record<string, MessageEntry> = {
     message: (a) => `the ${arg(a, "what")} must be plain text without { }`,
     fix: (a) => `Write the ${arg(a, "what")} as fixed text, so it can be checked before the program runs.`,
   },
+  E132: {
+    message: (a) => `'${arg(a, "word")}' is not a manifest entry`,
+    fix: (a) =>
+      arg(a, "suggestion") !== ""
+        ? `Did you mean '${arg(a, "suggestion")}'?`
+        : "A manifest entry starts with uritp, frame, actuator, sensor, profiles, extension or safety.",
+  },
   E131: {
     message: (a) => `'${arg(a, "word")}' is not a safety action`,
     fix: (a) =>
