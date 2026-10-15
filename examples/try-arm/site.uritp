@@ -1,4 +1,5 @@
-# Two spots on the table in front of the arm. Illustrative positions only.
+# Two spots on the table in front of the arm, with the tool pointing down (roll=180deg).
+# Illustrative positions only.
 
-define place bin_a = pose(0.4m, 0.1m, 0.05m)
-define place bin_b = pose(0.3m, -0.3m, 0.05m)
+define place bin_a = pose(0.4m, 0.1m, 0.05m, roll=180deg)
+define place bin_b = pose(0.3m, -0.3m, 0.05m, roll=180deg)
