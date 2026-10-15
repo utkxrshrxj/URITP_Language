@@ -11,11 +11,17 @@ robots like an adapter:
    explanation and a suggested fix.
 4. A robot driver carries out the checked instructions.
 
-> **Status:** requests in English, Hindi or Hinglish are translated into
-> URITP, fully checked against the robots' manifests, and run on simulated
-> drivers for Universal Robots, Raspberry Pi and Arduino robots (Phases 2 to
-> 7). The command line and conformance tests come next. No driver has been
-> tested on real hardware.
+> **Status:** version 0.1.0. Requests in English, Hindi or Hinglish are
+> translated into URITP, fully checked against the robots' manifests, and run
+> on simulated drivers for Universal Robots, Raspberry Pi and Arduino robots,
+> from a browser demo or the `uritp` command line. All three drivers pass the
+> Guidebook's conformance tests in simulator mode. No driver has been tested on
+> real hardware. See [CHANGELOG.md](CHANGELOG.md) for what is in this version
+> and what it does not do yet.
+
+New to URITP? [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) follows one
+request from the spoken words to a robot moving, without assuming any
+programming knowledge.
 
 ## Quick start
 
@@ -29,6 +35,33 @@ npm install
 npm test
 ```
 
+```bash
+npm run build
+```
+
+## The command line
+
+```bash
+npm run uritp -- run examples/try-arm/pick_and_place.uritp --robot manifests/universal-robots/ur-arm.uritp --protocol
+```
+
+| Command | What it does |
+|---|---|
+| `uritp check <file> --robot <manifest>` | Checks the program against each robot's manifest and the site map, and lists every problem with its code, line and fix. |
+| `uritp compile <file> --robot <manifest>` | Checks, then lists the instructions each robot would receive, in SI units. |
+| `uritp run <file> --robot <manifest>` | Checks, then runs the program on simulated robots, printing each instruction and how it ended. Ctrl+C stops every robot. |
+
+Useful options: `--robot name=<manifest>` to give a manifest to a named robot
+when there are several, `--site <file>` for a site map (otherwise
+`site.uritp` next to the program is used), `--lang hi` for Hindi messages,
+`--speed 10` to run ten times faster than real time, and `--protocol` to show
+the lines each driver would send. `npm run uritp -- help` lists them all.
+
+The command exits with 0 when everything went well, 1 when the program has
+problems or its run did not succeed, and 2 when the command itself was not
+understood. Error codes are the same in English and Hindi, and are listed in
+[spec/ERRORS.md](spec/ERRORS.md).
+
 ## The language
 
 - [spec/GRAMMAR.md](spec/GRAMMAR.md): the formal grammar (tokens,
@@ -38,7 +71,8 @@ npm test
 - [spec/DECISIONS.md](spec/DECISIONS.md): every place where the examples or
   the Guidebook needed a decision, and ideas that were not adopted.
 - [spec/ERRORS.md](spec/ERRORS.md): every error code and what triggers it.
-- [examples/](examples/): the six example programs, cleaned up so they parse.
+- [examples/](examples/): the six example programs, cleaned up so they parse,
+  and three ready-to-run programs, one for each kind of robot.
 
 ## Talking to a robot
 
@@ -78,7 +112,7 @@ since a web page must never hold an API key.
 | `drivers/` | `shared/` driver interface, plus one folder per company. |
 | `manifests/` | Robot manifests (capabilities and safety limits), one folder per company, each with its own tests. |
 | `examples/` | Example URITP programs. |
-| `conformance/` | Conformance tests from Guidebook section 9.3. |
+| `conformance/` | Conformance tests from Guidebook section 9.3, run against every driver. See [conformance/README.md](conformance/README.md). |
 | `tests/` | Unit tests (Vitest). |
 | `docs/` | Plain-language guides. |
 
@@ -107,7 +141,7 @@ any of these companies. See [docs/COMPANIES.md](docs/COMPANIES.md).
 | 5 | Code generation and runner | Done |
 | 6 | Drivers for the three companies | Done (simulator only) |
 | 7 | Voice and text layer | Done |
-| 8 | Command line, conformance tests, Hindi messages, v0.1.0 | Next |
+| 8 | Command line, conformance tests, Hindi messages, v0.1.0 | Done |
 
 ## License
 
