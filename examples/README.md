@@ -16,6 +16,17 @@ places or routes, a `site.uritp` site map that is loaded automatically
 
 The letters and numbers refer to entries in [spec/DECISIONS.md](../spec/DECISIONS.md).
 
+## Ready-to-run programs
+
+Three more programs are written to run as they are on the simulated robots,
+with `uritp run` (see docs/HOW_IT_WORKS.md):
+
+| Folder | Robot | What it does |
+|---|---|---|
+| `try-arm` | an industrial arm | picks up at one spot and puts down at another |
+| `try-camera-rover` | a rover with a camera | does its rounds, keeps away from the stairs, takes photos |
+| `try-small-rover` | a small rover with a distance sensor | drives forward until something is close, then turns round |
+
 The tests check every program with small made-up robot models
 (`tests/checker/models.ts`), then run it against simulated test robots and
 check the instructions each robot receives (`tests/runtime/examples-run.test.ts`).

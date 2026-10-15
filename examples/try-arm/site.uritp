@@ -1,0 +1,4 @@
+# Two spots on the table in front of the arm. Illustrative positions only.
+
+define place bin_a = pose(0.4m, 0.1m, 0.05m)
+define place bin_b = pose(0.3m, -0.3m, 0.05m)

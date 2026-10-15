@@ -1,0 +1,15 @@
+# A small pick-and-place for an industrial arm, ready to run on a simulated arm.
+# It moves between two fixed spots, since a simulated arm has no camera to find objects by name.
+
+robot arm = connect("lab:arm-1")
+
+task pick_and_place(from_spot, to_spot):
+    move arm.tool to from_spot.above(10cm) speed 0.2m/s
+    move arm.tool to from_spot speed 0.1m/s
+    grip arm.gripper close force 40N
+    move arm.tool to to_spot.above(10cm) speed 0.2m/s
+    grip arm.gripper open
+    on fail:
+        log "could not finish: {error.reason}"
+
+pick_and_place(places.bin_a, places.bin_b)

@@ -15,9 +15,14 @@ const files = readdirSync(examplesDir, { recursive: true, encoding: "utf8" })
   .sort();
 
 describe("examples", () => {
-  it("has the six example programs and their site maps", () => {
-    expect(files.filter((f) => !f.endsWith("site.uritp"))).toHaveLength(6);
-    expect(files.filter((f) => f.endsWith("site.uritp"))).toHaveLength(5);
+  it("has the six Guidebook example programs and their site maps", () => {
+    const guidebook = files.filter((f) => /^\d\d-/.test(f));
+    expect(guidebook.filter((f) => !f.endsWith("site.uritp"))).toHaveLength(6);
+    expect(guidebook.filter((f) => f.endsWith("site.uritp"))).toHaveLength(5);
+  });
+
+  it("has a ready-to-run program for each kind of robot", () => {
+    expect(files.filter((f) => f.startsWith("try-") && !f.endsWith("site.uritp"))).toHaveLength(3);
   });
 
   it.each(files)("%s parses with no errors", (file) => {

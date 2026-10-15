@@ -1,0 +1,10 @@
+# A small rover drives forward in short steps until something is close in front, then turns
+# round. Ready to run on a simulated rover; it has no camera, only a distance sensor.
+
+robot rover = connect("lab:rover-2")
+
+repeat 20 times:
+    if rover.sense("distance_front").value < 20cm:
+        break
+    drive rover.base forward by 5cm speed 0.1m/s
+turn rover.base by 180deg
