@@ -1,0 +1,11 @@
+# Only starts the picking round if the battery is above half; otherwise it stays to charge.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+log "battery", cart.battery
+if cart.battery > 50%:
+    say "Battery is fine. Starting the round."
+    for spot in route.picking:
+        move cart.base to spot
+else:
+    say "Battery low. Staying on the charger."

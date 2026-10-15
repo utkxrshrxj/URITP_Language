@@ -1,0 +1,10 @@
+# The picker takes the steel plate from the rack and puts it in the jig.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+move picker.tool to places.plate.above(10cm)
+grip picker.gripper close force 40N
+move picker.tool to places.jig.above(10cm)
+grip picker.gripper open
+say "Plate in the jig."

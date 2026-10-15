@@ -1,0 +1,11 @@
+# Copied from the URITP playground's world (github.com/senthuran2107/URITP, MIT licence).
+# Left out: its define floor and define obstacle lines, which this URITP does not have yet.
+# The playground still keeps robots off the floor's edge and out of the obstacles.
+# The Town: the playground rover starts at home, pose(1m, 1m, 0m).
+define place home        = pose(1m, 1m, 0m)
+define place shop        = pose(8.6m, 1.2m, 0m)
+define place school      = pose(8.6m, 5.8m, 0m)
+define place park        = pose(1.2m, 5.8m, 0m)
+define place post_office = pose(5m, 6.2m, 0m)
+define zone flowers      = polygon(pose(0.3m,2.6m,0m), pose(2.3m,2.6m,0m), pose(2.3m,4.2m,0m), pose(0.3m,4.2m,0m))
+define route delivery    = [places.shop, places.post_office, places.school]

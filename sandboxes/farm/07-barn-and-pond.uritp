@@ -1,0 +1,10 @@
+# Checks on the barn and the pond from 5m up, with a photo of each.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+takeoff drone to 5m
+move drone.base to places.barn.at_height(5m)
+capture drone.camera save as "barn.jpg"
+move drone.base to places.pond.at_height(5m)
+capture drone.camera save as "pond.jpg"
+land drone at places.pad

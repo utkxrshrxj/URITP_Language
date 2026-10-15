@@ -1,0 +1,13 @@
+# The same job with named values, so the grip strength and lift height are easy to change.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+let soft = 25N
+let lift = 15cm
+let careful = 0.2m/s
+
+move arm.tool to places.red_ball.above(lift)
+move arm.tool to places.red_ball.above(8cm) speed careful
+grip arm.gripper close force soft
+move arm.tool to places.basket.above(lift) speed careful
+grip arm.gripper open

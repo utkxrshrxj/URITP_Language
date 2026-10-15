@@ -1,0 +1,8 @@
+# Delivers to every stop on the delivery route, says so at each, and comes home.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+for spot in route.delivery:
+    move rover.base to spot
+    say "{spot.name} delivered"
+move rover.base to places.home

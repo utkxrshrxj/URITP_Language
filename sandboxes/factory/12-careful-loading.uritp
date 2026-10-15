@@ -1,0 +1,16 @@
+# Loads the plate, and lets go safely and says why if anything goes wrong on the way.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+task load(part):
+    move picker.tool to part.above(10cm)
+    grip picker.gripper close
+    move picker.tool to places.jig.above(10cm)
+    grip picker.gripper open
+    on fail:
+        grip picker.gripper open
+        say "Could not load {part.name}: {error.reason}"
+
+load(places.plate)
+say "Loaded."

@@ -1,0 +1,9 @@
+# Goes to the park, keeping off the flowerbed on the way there and back.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+move rover.base to places.park
+    avoid zones.flowers
+say "What a lovely park."
+move rover.base to places.home
+    avoid zones.flowers

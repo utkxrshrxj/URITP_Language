@@ -1,0 +1,27 @@
+# The shift as three tasks: load, weld (adaptive if possible), unload.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+task load():
+    move picker.tool to places.plate.above(10cm)
+    grip picker.gripper close
+    move picker.tool to places.jig.above(10cm)
+    grip picker.gripper open
+
+task join(seams):
+    if welder.has("examplecorp.adaptive_weld"):
+        examplecorp.adaptive_weld(seams, current=120A)
+    else:
+        weld along seams speed 5mm/s current 120A
+
+task unload():
+    move picker.tool to places.jig.above(10cm)
+    grip picker.gripper close
+    move picker.tool to places.bin.above(10cm)
+    grip picker.gripper open
+
+load()
+join(route.frame)
+unload()
+say "One frame done."

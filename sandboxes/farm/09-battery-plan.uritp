@@ -1,0 +1,12 @@
+# Only flies the full row if the battery is above half.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+log "battery", drone.battery
+if drone.battery > 50%:
+    takeoff drone to 3m
+    for plant in route.row_1:
+        move drone.base to plant.at_height(2m)
+    land drone at places.pad
+else:
+    say "Battery too low to fly today."

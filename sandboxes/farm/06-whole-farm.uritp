@@ -1,0 +1,10 @@
+# Photographs all six plants, row by row, then lands.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+takeoff drone to 4m
+for plant in route.all_plants:
+    move drone.base to plant.at_height(3m)
+    capture drone.camera save as "{plant.id}.jpg"
+land drone at places.pad
+say "All six plants photographed."

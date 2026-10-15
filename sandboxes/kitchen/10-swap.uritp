@@ -1,0 +1,13 @@
+# Moves the cube to the shelf, then changes its mind and puts it on the plate.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+task carry(thing, where):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to where.above(10cm)
+    grip arm.gripper open
+
+carry(places.blue_cube, places.shelf)
+say "On the shelf. Hmm, the plate is better."
+carry(places.shelf, places.plate)

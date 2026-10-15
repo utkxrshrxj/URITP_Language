@@ -1,0 +1,12 @@
+# Tidies only what is less than 1m from the basket; anything further stays where it is.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+for thing in [places.red_ball, places.blue_cube, places.cup]:
+    if distance(thing, places.basket) < 1m:
+        move arm.tool to thing.above(10cm)
+        grip arm.gripper close
+        move arm.tool to places.basket.above(10cm)
+        grip arm.gripper open
+    else:
+        say "{thing.name} stays"

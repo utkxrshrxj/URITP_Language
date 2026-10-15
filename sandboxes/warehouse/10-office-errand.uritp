@@ -1,0 +1,8 @@
+# Takes a message to the office, waits a moment, and returns to the dock.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+move cart.base to places.office speed 1m/s
+say "A note for the office."
+wait 2s
+move cart.base to places.dock speed 1m/s

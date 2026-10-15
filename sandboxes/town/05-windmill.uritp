@@ -1,0 +1,12 @@
+# Four small squares, turning right after each one, so they make a windmill.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+task square(size):
+    repeat 4 times:
+        drive rover.base forward by size
+        turn rover.base by 90deg
+
+repeat 4 times:
+    square(0.5m)
+    turn rover.base by -90deg

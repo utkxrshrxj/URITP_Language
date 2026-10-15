@@ -1,0 +1,13 @@
+# The noon round: the drone goes home by itself if its battery drops below 25%.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+safety:
+    return_home when drone.battery < 25%
+
+takeoff drone to 3m
+for plant in route.row_1:
+    move drone.base to plant.at_height(2m)
+    capture drone.camera save as "{plant.id}.jpg"
+    spray drone.sprayer on plant amount 20ml
+land drone at places.pad

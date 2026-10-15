@@ -1,0 +1,10 @@
+# Goes to the shop, waits while it is loaded, then takes the shopping to the post office.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+move rover.base to places.shop speed 0.8m/s
+say "Please put the parcel on my tray."
+wait 3s
+move rover.base to places.post_office speed 0.8m/s
+say "Parcel for the post office."
+move rover.base to places.home

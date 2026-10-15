@@ -1,0 +1,13 @@
+# A task sprays one plant; it is used on two plants that need it.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+task treat(plant):
+    move drone.base to plant.at_height(2m)
+    spray drone.sprayer on plant amount 10ml
+    say "Treated {plant.name}."
+
+takeoff drone to 3m
+treat(places.p1)
+treat(places.p3)
+land drone at places.pad

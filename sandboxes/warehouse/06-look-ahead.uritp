@@ -1,0 +1,10 @@
+# Reads the distance sensor three times and says what it sees each time.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+repeat 3 times:
+    let ahead = cart.sense("distance_front").value
+    if ahead < 1m:
+        say "Something {ahead} ahead."
+    else:
+        say "All clear for {ahead}."

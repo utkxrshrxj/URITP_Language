@@ -1,0 +1,9 @@
+# Uses the welder's own adaptive weld when it has one, and plain welding when it does not.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+if welder.has("examplecorp.adaptive_weld"):
+    examplecorp.adaptive_weld(route.frame, current=120A)
+else:
+    weld along route.frame speed 5mm/s current 120A

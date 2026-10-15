@@ -1,0 +1,15 @@
+# After welding, the picker moves the finished plate from the jig into the bin.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+task carry(from_spot, to_spot):
+    move picker.tool to from_spot.above(10cm)
+    grip picker.gripper close
+    move picker.tool to to_spot.above(10cm)
+    grip picker.gripper open
+
+carry(places.plate, places.jig)
+weld along route.seam speed 5mm/s current 120A
+carry(places.jig, places.bin)
+say "Finished plate in the bin."

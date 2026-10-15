@@ -1,0 +1,9 @@
+# Sprays every plant in row 2 with 20ml.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+takeoff drone to 3m
+for plant in route.row_2:
+    move drone.base to plant.at_height(2m)
+    spray drone.sprayer on plant amount 20ml
+land drone at places.pad

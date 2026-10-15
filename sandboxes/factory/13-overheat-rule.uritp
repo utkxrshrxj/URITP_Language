@@ -1,0 +1,15 @@
+# Welds the frame with a safety rule watching the welder: everything stops if it overheats.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+safety:
+    stop when welder.sense("temperature").value > 60deg_c
+    alert when welder.sense("temperature").value > 45deg_c
+
+move picker.tool to places.plate.above(10cm)
+grip picker.gripper close
+move picker.tool to places.jig.above(10cm)
+grip picker.gripper open
+weld along route.frame speed 5mm/s current 120A
+say "Frame welded safely."

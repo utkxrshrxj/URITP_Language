@@ -1,0 +1,7 @@
+# The welder welds all the way round the frame.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+weld along route.frame speed 5mm/s current 120A
+say "Frame welded."

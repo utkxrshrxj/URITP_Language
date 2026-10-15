@@ -1,0 +1,10 @@
+# Goes to the loading bay, waits up to 10s to be loaded, then takes the load to packing.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+move cart.base to places.loading
+say "Ready to be loaded."
+wait until cart.tray.loaded timeout 10s
+move cart.base to places.packing
+    avoid zones.forklift
+say "Load delivered."

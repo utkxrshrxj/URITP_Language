@@ -1,0 +1,10 @@
+# Copied from the URITP playground's robots (github.com/senthuran2107/URITP, MIT licence).
+# Left out: its line 'native [urscript]', since this URITP's manifests do not list native languages yet.
+manifest "Playground welding arm (simulated)":
+    uritp 0.1
+    frame tool: pose6d reach 0.85m max_speed 0.5m/s
+    sensor temperature: thermometer dimension Temperature
+    profiles [core, tooling]
+    extension examplecorp.adaptive_weld(seam: Route, current: Quantity<Current>)
+    safety max_speed 0.5m/s
+    safety forbidden_zone zones.guard

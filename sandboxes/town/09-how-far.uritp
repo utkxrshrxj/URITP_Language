@@ -1,0 +1,11 @@
+# Works out how far each stop is from home and logs it, without moving.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+for spot in route.delivery:
+    let far = distance(places.home, spot)
+    if far > 8m:
+        log spot.name, "far", far
+    else:
+        log spot.name, "near", far
+say "Distances logged."

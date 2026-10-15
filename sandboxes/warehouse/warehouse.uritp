@@ -1,0 +1,15 @@
+# Copied from the URITP playground's world (github.com/senthuran2107/URITP, MIT licence).
+# Left out: its define floor and define obstacle lines, which this URITP does not have yet.
+# The playground still keeps robots off the floor's edge and out of the obstacles.
+# The Warehouse: the playground cart starts at its charging dock, pose(1m, 1m, 0m).
+# Racks are obstacles (a floor robot never drives into them); the forklift lane is a zone you can
+# tell a move to avoid. Aisle C is blocked today (the cart's .sim file makes moves there fail).
+define place dock     = pose(1m, 1m, 0m)
+define place packing  = pose(8m, 1m, 0m)
+define place loading  = pose(8m, 5m, 0m)
+define place aisle_a  = pose(2.6m, 4.2m, 0m)
+define place aisle_b  = pose(4.6m, 4.2m, 0m)
+define place aisle_c  = pose(6.6m, 4.2m, 0m)
+define place office   = pose(1m, 5m, 0m)
+define zone forklift  = polygon(pose(4.1m,0m,0m), pose(4.9m,0m,0m), pose(4.9m,1.9m,0m), pose(4.1m,1.9m,0m))
+define route picking  = [places.aisle_a, places.aisle_b, places.packing]

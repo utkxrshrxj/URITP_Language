@@ -1,0 +1,15 @@
+# The night round: fast to far stops, slower to near ones, and never to the school, which is closed.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+task deliver(spot):
+    if distance(places.home, spot) > 7m:
+        move rover.base to spot speed 1m/s
+    else:
+        move rover.base to spot speed 0.6m/s
+    say "{spot.name} delivered"
+
+for spot in route.delivery:
+    if spot.name != "school":
+        deliver(spot)
+move rover.base to places.home

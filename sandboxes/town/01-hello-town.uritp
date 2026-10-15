@@ -1,0 +1,8 @@
+# The rover says hello, drives to the shop and comes back home.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+say "Hello, town! Off to the shop."
+move rover.base to places.shop
+say "At the shop."
+move rover.base to places.home

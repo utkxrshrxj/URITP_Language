@@ -1,0 +1,9 @@
+# A high survey: the whole farm photographed from 6m up.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+takeoff drone to 6m
+for plant in route.all_plants:
+    move drone.base to plant.at_height(6m) speed 2m/s
+    capture drone.camera save as "high_{plant.id}.jpg"
+land drone at places.pad

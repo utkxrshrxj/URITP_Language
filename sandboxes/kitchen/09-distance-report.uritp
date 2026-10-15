@@ -1,0 +1,8 @@
+# Measures how far each thing is from the basket and logs it, without moving anything.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+for thing in [places.red_ball, places.blue_cube, places.cup]:
+    let far = distance(thing, places.basket)
+    log thing.name, "from the basket", far
+say "Report done"

@@ -1,0 +1,8 @@
+# The cart leaves its dock, goes to the packing table and comes back.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+say "Cart starting work."
+move cart.base to places.packing
+say "At packing."
+move cart.base to places.dock

@@ -1,0 +1,9 @@
+# Puts the blue cube on the plate, gently: slow near the table, and a soft grip.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+move arm.tool to places.blue_cube.above(15cm) speed 0.5m/s
+move arm.tool to places.blue_cube.above(8cm) speed 0.1m/s
+grip arm.gripper close force 20N
+move arm.tool to places.plate.above(10cm) speed 0.3m/s
+grip arm.gripper open

@@ -1,0 +1,9 @@
+# The drone takes off, hovers over the field for a moment, and lands back on its pad.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+takeoff drone to 3m
+say "Flying!"
+move drone.base to places.p2.at_height(3m)
+wait 2s
+land drone at places.pad

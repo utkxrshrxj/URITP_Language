@@ -1,0 +1,11 @@
+# Weaves left and right along the road in front of home, like a slalom.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+repeat 3 times:
+    turn rover.base by 30deg
+    drive rover.base forward by 0.8m
+    turn rover.base by -60deg
+    drive rover.base forward by 0.8m
+    turn rover.base by 30deg
+say "Slalom done!"

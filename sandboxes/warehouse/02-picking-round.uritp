@@ -1,0 +1,7 @@
+# Goes along the picking route, aisle by aisle, and ends at packing.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+for spot in route.picking:
+    move cart.base to spot
+    say "At {spot.name}"

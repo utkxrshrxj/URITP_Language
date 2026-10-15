@@ -1,0 +1,14 @@
+# Sets the table: the ball in the basket, the cube on the plate, the cup on the shelf.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+task carry(thing, where):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to where.above(10cm)
+    grip arm.gripper open
+    say "{thing.name} done"
+
+carry(places.red_ball, places.basket)
+carry(places.blue_cube, places.plate)
+carry(places.cup, places.shelf)

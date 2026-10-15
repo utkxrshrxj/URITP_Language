@@ -1,0 +1,8 @@
+# Copied from the URITP playground's robots (github.com/senthuran2107/URITP, MIT licence).
+manifest "Playground delivery rover (simulated)":
+    uritp 0.1
+    frame base: pose2d max_speed 1m/s
+    actuator tray: states [empty, loaded]
+    profiles [core, navigation, speech]
+    safety max_speed 1m/s
+    safety forbidden_zone zones.flowers

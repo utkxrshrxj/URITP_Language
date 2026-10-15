@@ -1,0 +1,8 @@
+# Copied from the URITP playground's robots (github.com/senthuran2107/URITP, MIT licence).
+manifest "Playground picking arm (simulated)":
+    uritp 0.1
+    frame tool: pose6d reach 0.85m max_speed 1m/s payload 3kg
+    actuator gripper: states [open, closed] max_force 60N
+    profiles [core, manipulation, speech]
+    safety max_speed 1m/s
+    safety forbidden_zone zones.guard

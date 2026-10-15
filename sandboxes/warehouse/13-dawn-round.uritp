@@ -1,0 +1,18 @@
+# The dawn round: stops if anything gets within 15cm, copes with the blocked aisle C,
+# waits to be loaded, and takes the load to packing round the forklift lane.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+safety:
+    stop when cart.sense("distance_front").value < 15cm
+
+task fetch_from_c():
+    move cart.base to places.aisle_c
+    on fail:
+        log error.code, error.reason
+        move cart.base to places.aisle_b
+
+fetch_from_c()
+wait until cart.tray.loaded timeout 10s
+move cart.base to places.packing
+    avoid zones.forklift

@@ -1,0 +1,14 @@
+# One task, used three times: everything on the table goes into the basket.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+task tidy(thing):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to places.basket.above(10cm)
+    grip arm.gripper open
+
+tidy(places.red_ball)
+tidy(places.blue_cube)
+tidy(places.cup)
+say "All tidy!"

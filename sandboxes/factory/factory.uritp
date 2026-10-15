@@ -1,0 +1,14 @@
+# Copied from the URITP playground's world (github.com/senthuran2107/URITP, MIT licence).
+# The Factory bench: the welder stands at pose(-0.55m, 0m, 0m) and the picker at pose(0.7m, 0m, 0m).
+# Each reaches 0.85m. The seams are where two steel plates meet; the guard zone is where people stand.
+define place rack    = pose(1.2m, 0.45m, 0.02m)
+define place jig     = pose(0.05m, 0m, 0.03m)
+define place bin     = pose(1.25m, -0.45m, 0.05m)
+define place plate   = pose(1.2m, 0.45m, 0.02m)
+define place s1      = pose(-0.12m, -0.12m, 0.04m)
+define place s2      = pose(0.22m, -0.12m, 0.04m)
+define place s3      = pose(0.22m, 0.12m, 0.04m)
+define place s4      = pose(-0.12m, 0.12m, 0.04m)
+define zone  guard   = polygon(pose(-0.4m,0.55m,0m), pose(0.5m,0.55m,0m), pose(0.5m,0.8m,0m), pose(-0.4m,0.8m,0m))
+define route seam    = [places.s1, places.s2]
+define route frame   = [places.s1, places.s2, places.s3, places.s4, places.s1]

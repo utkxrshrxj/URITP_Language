@@ -1,0 +1,8 @@
+# Visits every building in town, says hello at each, and comes home.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+for spot in [places.shop, places.school, places.post_office, places.park]:
+    move rover.base to spot
+    say "Hello, {spot.name}!"
+move rover.base to places.home

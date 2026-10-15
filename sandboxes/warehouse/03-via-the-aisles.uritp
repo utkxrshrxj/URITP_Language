@@ -1,0 +1,7 @@
+# Goes to the loading bay by way of the picking route, then back to the dock.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+move cart.base to places.loading via route.picking
+say "At the loading bay."
+move cart.base to places.dock

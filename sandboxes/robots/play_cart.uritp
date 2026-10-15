@@ -1,0 +1,8 @@
+# Copied from the URITP playground's robots (github.com/senthuran2107/URITP, MIT licence).
+manifest "Playground warehouse cart (simulated)":
+    uritp 0.1
+    frame base: pose2d max_speed 1.5m/s
+    actuator tray: states [empty, loaded]
+    sensor distance_front: range dimension Length
+    profiles [core, navigation, speech]
+    safety max_speed 1.5m/s

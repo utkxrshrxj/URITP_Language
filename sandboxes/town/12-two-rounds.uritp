@@ -1,0 +1,9 @@
+# Does the delivery round twice, as a morning and an evening round.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+for shift in ["morning", "evening"]:
+    say "Starting the {shift} round."
+    for spot in route.delivery:
+        move rover.base to spot
+    move rover.base to places.home

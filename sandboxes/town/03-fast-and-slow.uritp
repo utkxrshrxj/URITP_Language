@@ -1,0 +1,8 @@
+# Hurries to the shop at the speed limit, then comes home slowly.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+move rover.base to places.shop speed 1m/s
+say "Got here fast."
+move rover.base to places.home speed 0.4m/s
+say "Home, nice and slow."

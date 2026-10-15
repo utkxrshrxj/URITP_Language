@@ -1,0 +1,8 @@
+# The welder welds one seam, from s1 to s2.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+move welder.tool to places.s1.above(5cm)
+weld along route.seam speed 5mm/s current 120A
+move welder.tool to places.s1.above(15cm)

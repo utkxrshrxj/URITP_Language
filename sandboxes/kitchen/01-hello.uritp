@@ -1,0 +1,9 @@
+# The kitchen arm says hello and points at each thing on the table.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+say "Namaste! I am the kitchen arm."
+move arm.tool to places.red_ball.above(10cm)
+move arm.tool to places.blue_cube.above(10cm)
+move arm.tool to places.cup.above(10cm)
+say "I can see a ball, a cube and a cup."

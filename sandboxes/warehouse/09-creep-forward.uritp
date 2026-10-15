@@ -1,0 +1,9 @@
+# Creeps forward in small steps, and stops as soon as something is closer than 20cm.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+repeat 6 times:
+    if cart.sense("distance_front").value < 20cm:
+        say "Stop! Something is right in front of me."
+        break
+    drive cart.base forward by 30cm speed 0.3m/s

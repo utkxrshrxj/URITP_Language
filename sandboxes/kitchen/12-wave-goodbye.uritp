@@ -1,0 +1,8 @@
+# The arm waves over the basket three times and says goodbye.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+repeat 3 times:
+    move arm.tool to places.basket.above(30cm) speed 0.5m/s
+    move arm.tool to places.basket.above(15cm) speed 0.5m/s
+say "Bye bye!"

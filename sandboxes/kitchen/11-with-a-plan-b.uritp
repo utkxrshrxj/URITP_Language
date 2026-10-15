@@ -1,0 +1,15 @@
+# Tidies the ball, and says so plainly if anything goes wrong on the way.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+task tidy(thing):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to places.basket.above(10cm)
+    grip arm.gripper open
+    on fail:
+        grip arm.gripper open
+        say "I could not tidy {thing.name}: {error.reason}"
+
+tidy(places.red_ball)
+say "Finished"

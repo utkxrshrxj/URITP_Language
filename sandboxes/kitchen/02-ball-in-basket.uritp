@@ -1,0 +1,9 @@
+# Picks up the red ball and drops it in the basket.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+move arm.tool to places.red_ball.above(10cm)
+grip arm.gripper close
+move arm.tool to places.basket.above(10cm)
+grip arm.gripper open
+say "The ball is in the basket."

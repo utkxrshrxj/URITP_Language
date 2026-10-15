@@ -1,0 +1,12 @@
+# Reads the welder's temperature first, and only welds if it is cool enough.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+let heat = welder.sense("temperature").value
+log "temperature", heat
+if heat < 40deg_c:
+    weld along route.seam speed 5mm/s current 120A
+    say "Seam welded."
+else:
+    say "The welder is too hot. Waiting."

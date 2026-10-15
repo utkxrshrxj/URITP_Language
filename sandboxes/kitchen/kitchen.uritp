@@ -1,0 +1,13 @@
+# Copied from the URITP playground's world (github.com/senthuran2107/URITP, MIT licence).
+# The Kitchen table: the playground arm stands at pose(0m, 0m, 0m).
+# Things start at these places; the arm can reach 0.85m and starts at pose(0.35m, 0m, 0.3m).
+define place red_ball  = pose(0.55m, 0.25m, 0.04m)
+define place blue_cube = pose(0.6m, -0.15m, 0.03m)
+define place cup       = pose(0.05m, 0.6m, 0.05m)
+define place basket    = pose(0.25m, -0.5m, 0.06m)
+define place plate     = pose(0.6m, -0.45m, 0.01m)
+define place shelf     = pose(-0.5m, 0m, 0.12m)
+define place cat_bed   = pose(-0.45m, 0.5m, 0m)
+define place stove     = pose(-0.45m, -0.5m, 0m)
+define zone  cat_bed   = polygon(pose(-0.7m,0.3m,0m), pose(-0.2m,0.3m,0m), pose(-0.2m,0.7m,0m), pose(-0.7m,0.7m,0m))
+define zone  stove     = polygon(pose(-0.7m,-0.7m,0m), pose(-0.2m,-0.7m,0m), pose(-0.2m,-0.3m,0m), pose(-0.7m,-0.3m,0m))

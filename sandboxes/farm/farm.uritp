@@ -1,0 +1,16 @@
+# Copied from the URITP playground's world (github.com/senthuran2107/URITP, MIT licence).
+# The Farm: the playground drone waits on its pad, pose(1.2m, 1.2m, 0m). Places are on the ground;
+# fly to them with .at_height(...). The beehives are a no-fly zone for the drone.
+define place pad    = pose(1.2m, 1.2m, 0m)
+define place barn   = pose(1.4m, 6.6m, 0m)
+define place pond   = pose(10.6m, 1.6m, 0m)
+define place p1     = pose(4m, 3m, 0m)
+define place p2     = pose(6m, 3m, 0m)
+define place p3     = pose(8m, 3m, 0m)
+define place p4     = pose(4m, 5.6m, 0m)
+define place p5     = pose(6m, 5.6m, 0m)
+define place p6     = pose(8m, 5.6m, 0m)
+define zone beehives = polygon(pose(9.8m,5m,0m), pose(11.6m,5m,0m), pose(11.6m,7.4m,0m), pose(9.8m,7.4m,0m))
+define route row_1  = [places.p1, places.p2, places.p3]
+define route row_2  = [places.p6, places.p5, places.p4]
+define route all_plants = [places.p1, places.p2, places.p3, places.p6, places.p5, places.p4]

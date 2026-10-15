@@ -1,0 +1,15 @@
+# Tries aisle C, which is blocked today, and goes to aisle B instead when that fails.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+task fetch_from_c():
+    move cart.base to places.aisle_c
+    say "Got it from aisle C."
+    on fail:
+        log error.code, error.reason
+        say "Aisle C is blocked. Trying aisle B."
+        move cart.base to places.aisle_b
+
+fetch_from_c()
+move cart.base to places.packing
+    avoid zones.forklift

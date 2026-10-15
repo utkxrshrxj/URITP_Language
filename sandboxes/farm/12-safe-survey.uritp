@@ -1,0 +1,15 @@
+# Surveys row 2, and lands safely on its pad if anything goes wrong on the way.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+task survey(row):
+    takeoff drone to 3m
+    for plant in row:
+        move drone.base to plant.at_height(2m)
+        capture drone.camera save as "{plant.id}.jpg"
+    land drone at places.pad
+    on fail:
+        say "Something went wrong: {error.reason}. Landing."
+        land drone at places.pad
+
+survey(route.row_2)

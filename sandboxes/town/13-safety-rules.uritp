@@ -1,0 +1,12 @@
+# The delivery round with safety rules: an alert below 30% battery, a full stop below 10%.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+safety:
+    stop when rover.battery < 10%
+    alert when rover.battery < 30%
+
+for spot in route.delivery:
+    move rover.base to spot speed 0.8m/s
+    say "{spot.name} delivered"
+move rover.base to places.home

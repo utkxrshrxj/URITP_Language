@@ -1,0 +1,15 @@
+# A whole shift: fetch from three aisles (one is blocked), drop off at packing, go home.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+task fetch(spot):
+    move cart.base to spot
+    say "Picked up at {spot.name}."
+    on fail:
+        say "Skipping {spot.name}: {error.code}"
+
+for spot in [places.aisle_a, places.aisle_c, places.aisle_b]:
+    fetch(spot)
+move cart.base to places.packing
+    avoid zones.forklift
+move cart.base to places.dock

@@ -1,0 +1,9 @@
+# Goes to packing and back without ever entering the forklift lane.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+move cart.base to places.packing
+    avoid zones.forklift
+say "Delivered to packing."
+move cart.base to places.dock
+    avoid zones.forklift

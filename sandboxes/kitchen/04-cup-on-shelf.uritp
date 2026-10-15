@@ -1,0 +1,9 @@
+# Puts the cup away on the shelf. The arm plans its own way round the cat's bed.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+move arm.tool to places.cup.above(10cm)
+grip arm.gripper close force 30N
+move arm.tool to places.shelf.above(10cm) speed 0.3m/s
+grip arm.gripper open
+say "The cup is on the shelf."

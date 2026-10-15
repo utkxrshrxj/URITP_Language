@@ -1,0 +1,8 @@
+# Drives a square with 1m sides in front of home.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+repeat 4 times:
+    drive rover.base forward by 1m
+    turn rover.base by 90deg
+say "Square done."

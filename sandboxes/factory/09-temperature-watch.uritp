@@ -1,0 +1,11 @@
+# Reads the temperature three times, a second apart, and warns when it gets hot.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+repeat 3 times:
+    let heat = welder.sense("temperature").value
+    log "temperature", heat
+    if heat > 45deg_c:
+        alert "The welder is getting hot: {heat}"
+    wait 1s

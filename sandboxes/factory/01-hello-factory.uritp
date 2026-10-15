@@ -1,0 +1,9 @@
+# Both arms get into position at the start of a shift, and the picker says hello.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+say "Good morning, factory!"
+move welder.tool to places.s1.above(10cm)
+move picker.tool to places.bin.above(15cm)
+say "Both arms ready."

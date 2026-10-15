@@ -1,0 +1,13 @@
+# Takes off, reads its height sensor, and reports whether it is high enough to work.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+takeoff drone to 3m
+let height = drone.sense("height").value
+log "height", height
+if height >= 2.5m:
+    say "High enough. Starting work."
+    move drone.base to places.p1.at_height(3m)
+else:
+    say "Too low. Coming back down."
+land drone at places.pad

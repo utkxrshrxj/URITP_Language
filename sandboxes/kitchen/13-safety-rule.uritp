@@ -1,0 +1,16 @@
+# Tidies the table with a safety rule on watch: the arm stops at once if its battery runs low.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+safety:
+    stop when arm.battery < 10%
+
+task tidy(thing):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to places.basket.above(10cm)
+    grip arm.gripper open
+
+tidy(places.red_ball)
+tidy(places.blue_cube)
+say "Tidy, and safe."

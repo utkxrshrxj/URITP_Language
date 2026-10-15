@@ -1,0 +1,8 @@
+# Flies 2m above plant p2, takes its photo, and lands.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+takeoff drone to 3m
+move drone.base to places.p2.at_height(2m)
+capture drone.camera save as "p2.jpg"
+land drone at places.pad

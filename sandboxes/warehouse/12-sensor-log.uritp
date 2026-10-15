@@ -1,0 +1,8 @@
+# Logs the distance sensor once a second for three seconds.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+repeat 3 times:
+    log "distance", cart.sense("distance_front").value
+    wait 1s
+say "Readings logged."
