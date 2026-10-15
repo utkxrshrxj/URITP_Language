@@ -130,8 +130,9 @@ A file is a manifest file when its first statement starts with `manifest`.
 
 Some keywords may also be used as names in a few exact places (B7): as
 named-argument labels (`current=180A`), as extension parameter names in
-manifests, as actuator state names (`states [open, closed]`) and as sensor
-names in manifests (`sensor force: wrench`).
+manifests, as actuator state names (`states [open, closed]`), as sensor
+names in manifests (`sensor force: wrench`) and as language codes
+(`lang or` for Odia).
 
 ## 1.6 Numbers, quantities and percents
 
@@ -252,7 +253,7 @@ robot_stmt     = "robot" NAME "=" "connect" "(" TEXT ")" NEWLINE ;
 (* let NAME = EXPR, and  let x = ask "QUESTION" [lang CODE] *)
 let_stmt       = "let" NAME "=" ( expression | ask_expr ) ;
 ask_expr       = "ask" TEXT [ lang_clause ] ;
-lang_clause    = "lang" NAME ;
+lang_clause    = "lang" ( NAME | keyword ) ;   (* e.g. lang hi, lang or (B7) *)
 
 (* task NAME(PARAMS): block *)
 task_def       = "task" NAME "(" [ NAME { "," NAME } ] ")" block ;

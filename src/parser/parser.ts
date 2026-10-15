@@ -2,17 +2,87 @@
 // It is a hand-written "recursive descent" parser: one method per grammar rule.
 
 import { makeDiagnostic, type Diagnostic, type DiagnosticArgs } from "../diagnostics/diagnostic.js";
+import { closestMatch } from "../diagnostics/suggest.js";
 import { lex } from "../lexer/lexer.js";
 import { describeToken, type Token } from "../lexer/tokens.js";
-import type { Argument, BinaryOperator, Expression, TextLiteral } from "./ast.js";
+import type {
+  Argument,
+  AskExpression,
+  BinaryOperator,
+  Block,
+  CallStatement,
+  Expression,
+  ImportStatement,
+  LetStatement,
+  Program,
+  ReturnStatement,
+  RobotStatement,
+  Statement,
+  TaskStatement,
+  TextLiteral,
+} from "./ast.js";
 
 /** Thrown to give up on the current statement after an error has been recorded. */
 class ParseError extends Error {}
 
 const COMPARISON_OPERATORS = ["==", "!=", "<", "<=", ">", ">="];
 
+/** Words that can start a statement, used for "did you mean ...?" hints. */
+const STATEMENT_WORDS = [
+  "robot", "let", "task", "return", "import", "move", "drive", "turn", "takeoff",
+  "land", "stop", "grip", "pick", "place", "pour", "weld", "spray", "capture",
+  "log", "alert", "say", "confirm", "if", "for", "repeat", "break", "wait",
+  "parallel", "safety", "native", "define",
+];
+
+/** Words from other languages or the examples that people may type by habit. */
+const STATEMENT_HINTS: Readonly<Record<string, string>> = {
+  disp: "say",
+  display: "say",
+  print: "say",
+  speak: "say",
+  show: "say",
+  goto: "move",
+  go: "move",
+  sleep: "wait",
+  delay: "wait",
+  pause: "wait",
+  while: "repeat",
+  loop: "repeat",
+  def: "task",
+  function: "task",
+  func: "task",
+  var: "let",
+  const: "let",
+  set: "let",
+};
+
+/** What the statement being read is allowed to contain (DECISIONS.md C6). */
+interface Context {
+  /** True only for statements directly in the program, not inside any block. */
+  readonly topLevel: boolean;
+  /** True inside a task body, where return is allowed. */
+  readonly canReturn: boolean;
+  /** True inside a for or repeat loop, where break is allowed. */
+  readonly canBreak: boolean;
+}
+
+const TOP_LEVEL: Context = { topLevel: true, canReturn: false, canBreak: false };
+
+/** Rules for statements that only belong in one kind of place. */
+const PLACEMENT: Readonly<Record<string, { allowed: (c: Context) => boolean; where: string; fix: string }>> = {
+  robot: { allowed: (c) => c.topLevel, where: "at the top level of a program", fix: "Move it to the top level, with no indentation." },
+  task: { allowed: (c) => c.topLevel, where: "at the top level of a program", fix: "Move it to the top level, with no indentation. Tasks cannot be put inside other blocks." },
+  import: { allowed: (c) => c.topLevel, where: "at the top level of a program", fix: "Move it to the top level, with no indentation." },
+  define: { allowed: (c) => c.topLevel, where: "at the top level of a program", fix: "Move it to the top level, with no indentation." },
+  safety: { allowed: (c) => c.topLevel, where: "at the top level of a program", fix: "Move it to the top level, with no indentation." },
+  return: { allowed: (c) => c.canReturn, where: "inside a task", fix: "Use return only inside a task, and not inside parallel:." },
+  break: { allowed: (c) => c.canBreak, where: "inside a for or repeat loop", fix: "Use break only inside a loop. It cannot be used inside parallel: or to leave a task." },
+};
+
 export class Parser {
   private position = 0;
+  private context: Context = TOP_LEVEL;
   readonly diagnostics: Diagnostic[] = [];
 
   constructor(private readonly tokens: readonly Token[]) {}
@@ -281,6 +351,290 @@ export class Parser {
   }
 
   // -------------------------------------------------------------------------
+  // Programs and blocks (GRAMMAR.md 2.1)
+  // -------------------------------------------------------------------------
+
+  parseProgram(): Program {
+    const { statements, onFail } = this.parseStatements("eof");
+    return { kind: "Program", statements, onFail };
+  }
+
+  /**
+   * Reads statements until `end` (the end of a block, or of the file).
+   * An on fail: handler must be the last item (DECISIONS.md C6).
+   */
+  private parseStatements(end: "dedent" | "eof"): Block {
+    const statements: Statement[] = [];
+    let onFail: Block["onFail"] = null;
+    for (;;) {
+      const token = this.peek();
+      if (token.kind === end || token.kind === "eof") break;
+      if (token.kind === "dedent" || token.kind === "newline") {
+        this.advance(); // left over after an earlier error
+        continue;
+      }
+      if (token.kind === "indent") {
+        this.synchronize(); // a block with no statement to belong to; the lexer has reported it
+        continue;
+      }
+      if (this.isKeyword("on") && this.isKeyword("fail", 1)) {
+        const handler = this.parseOnFail();
+        if (handler !== null) onFail = handler;
+        const next = this.peek().kind;
+        if (next !== end && next !== "eof") this.report("E128", token);
+        continue;
+      }
+      const statement = this.parseStatementSafely();
+      if (statement !== null) statements.push(statement);
+    }
+    return { statements, onFail };
+  }
+
+  private parseOnFail(): Block["onFail"] {
+    const start = this.advance();
+    this.advance(); // fail
+    try {
+      const body = this.parseBlock("'on fail'");
+      return { body, line: start.line, column: start.column };
+    } catch (error) {
+      if (!(error instanceof ParseError)) throw error;
+      this.synchronize();
+      return null;
+    }
+  }
+
+  /** Reads ':' NEWLINE INDENT statements DEDENT. `after` names the line, for the E101 message. */
+  protected parseBlock(after: string, context: Partial<Context> = {}): Block {
+    if (!this.isSymbol(":")) this.fail("E101", this.peek(), { after });
+    this.advance();
+    if (this.peek().kind !== "newline") {
+      this.failExpected("the end of the line after ':'", "", "Start the block on the next line, indented by 4 more spaces.");
+    }
+    this.advance();
+    if (this.peek().kind !== "indent") {
+      // Report but do not give up: the next line is a real statement and should still be read.
+      this.report("E104", this.peek());
+      return { statements: [], onFail: null };
+    }
+    this.advance();
+    const outer = this.context;
+    this.context = { ...outer, topLevel: false, ...context };
+    try {
+      const block = this.parseStatements("dedent");
+      if (this.peek().kind === "dedent") this.advance();
+      return block;
+    } finally {
+      this.context = outer;
+    }
+  }
+
+  /** Reads one statement; after an error, skips to the next statement and returns null. */
+  private parseStatementSafely(): Statement | null {
+    try {
+      return this.parseStatement();
+    } catch (error) {
+      if (!(error instanceof ParseError)) throw error;
+      this.synchronize();
+      return null;
+    }
+  }
+
+  /**
+   * Skips the rest of a broken statement: up to the end of its line, plus any block
+   * that belongs to it (and the elif/else parts of a broken if).
+   */
+  private synchronize(): void {
+    let depth = 0;
+    for (;;) {
+      const token = this.peek();
+      if (token.kind === "eof") return;
+      if (token.kind === "indent") {
+        depth++;
+      } else if (token.kind === "dedent") {
+        if (depth === 0) return; // the end of the enclosing block: not ours to skip
+        depth--;
+        if (depth === 0) {
+          this.advance();
+          if (this.isKeyword("elif") || this.isKeyword("else")) continue;
+          return;
+        }
+      } else if (token.kind === "newline" && depth === 0) {
+        this.advance();
+        if (this.peek().kind !== "indent") return;
+        continue;
+      }
+      this.advance();
+    }
+  }
+
+  /** Expects the end of a simple statement's line. */
+  protected endStatement(form: string): void {
+    if (this.peek().kind === "newline") {
+      this.advance();
+      return;
+    }
+    if (this.isSymbol(",")) {
+      this.failExpected("the end of the line", form, "Remove the comma. The parts of a statement follow each other without commas.");
+    }
+    this.failExpected("the end of the line", form);
+  }
+
+  // -------------------------------------------------------------------------
+  // Statements (GRAMMAR.md 2.2 to 2.8)
+  // -------------------------------------------------------------------------
+
+  private parseStatement(): Statement {
+    const token = this.peek();
+    if (token.kind === "name") return this.parseCallStatement();
+    if (token.kind !== "keyword") return this.failExpected("a statement");
+
+    const placement = PLACEMENT[token.text];
+    if (placement !== undefined && !placement.allowed(this.context)) {
+      this.report("E127", token, { statement: token.text, where: placement.where, fix: placement.fix });
+    }
+
+    switch (token.text) {
+      case "robot":
+        return this.parseRobot();
+      case "let":
+        return this.parseLet();
+      case "task":
+        return this.parseTask();
+      case "return":
+        return this.parseReturn();
+      case "import":
+        return this.parseImport();
+      default:
+        return this.parseOtherKeyword(token);
+    }
+  }
+
+  /** Explains keywords that cannot start a statement. */
+  protected parseOtherKeyword(token: Token): Statement {
+    switch (token.text) {
+      case "return_home":
+        return this.fail("E127", token, {
+          statement: "return_home",
+          where: "as a safety action inside safety:",
+          fix: "Write it inside a safety: block, for example: return_home drone when drone.battery < 25%",
+        });
+      case "ask":
+        return this.fail("E129", token);
+      case "elif":
+      case "else":
+        return this.failExpected("a statement", "", `'${token.text}' must line up with an 'if' just above it.`);
+      case "on":
+        this.advance();
+        return this.failExpected("'fail'", "on fail:");
+      default:
+        return this.failExpected("a statement");
+    }
+  }
+
+  // ---- Program structure (GRAMMAR.md 2.3) ----
+
+  private parseRobot(): RobotStatement {
+    const form = 'robot NAME = connect("ADDRESS")';
+    const start = this.advance();
+    const name = this.expectName("a robot name", form);
+    this.expectSymbol("=", form);
+    this.expectKeyword("connect", form);
+    this.expectSymbol("(", form);
+    const address = this.expectText("the robot address in double quotes", form);
+    this.requireConstantText(address, "robot address");
+    this.expectSymbol(")", form);
+    this.endStatement(form);
+    return { kind: "Robot", name: name.text, address, line: start.line, column: start.column };
+  }
+
+  private parseLet(): LetStatement {
+    const form = "let NAME = VALUE";
+    const start = this.advance();
+    const name = this.expectName("a name", form);
+    this.expectSymbol("=", form);
+    let value: Expression | AskExpression;
+    const ask = this.acceptKeyword("ask");
+    if (ask !== undefined) {
+      const question = this.expectText("a question in double quotes", 'let NAME = ask "QUESTION" [lang CODE]');
+      value = { kind: "Ask", question, lang: this.parseLang(), line: ask.line, column: ask.column };
+    } else {
+      value = this.parseExpression();
+    }
+    this.endStatement(form);
+    return { kind: "Let", name: name.text, value, line: start.line, column: start.column };
+  }
+
+  private parseTask(): TaskStatement {
+    const form = "task NAME(PARAMS):";
+    const start = this.advance();
+    const name = this.expectName("a task name", form);
+    this.expectSymbol("(", form);
+    const params: string[] = [];
+    if (!this.isSymbol(")")) {
+      do {
+        params.push(this.expectName("a parameter name", form).text);
+      } while (this.acceptSymbol(","));
+    }
+    this.expectSymbol(")", form);
+    const body = this.parseBlock("the task name and its parameters", { canReturn: true, canBreak: false });
+    return { kind: "Task", name: name.text, params, body, line: start.line, column: start.column };
+  }
+
+  private parseReturn(): ReturnStatement {
+    const start = this.advance();
+    const value = this.peek().kind === "newline" ? null : this.parseExpression();
+    this.endStatement("return [VALUE]");
+    return { kind: "Return", value, line: start.line, column: start.column };
+  }
+
+  private parseImport(): ImportStatement {
+    const form = 'import "FILE.uritp"';
+    const start = this.advance();
+    const path = this.expectText("a file name in double quotes", form);
+    this.requireConstantText(path, "file name");
+    this.endStatement(form);
+    return { kind: "Import", path, line: start.line, column: start.column };
+  }
+
+  /** A line starting with a name must be a call, like pick_and_place(cup, tray) (DECISIONS.md C3). */
+  private parseCallStatement(): CallStatement {
+    const start = this.peek();
+    if (!this.isSymbol("(", 1) && !this.isSymbol(".", 1)) {
+      this.fail("E121", start, this.unknownStatementHint(start.text));
+    }
+    const expression = this.parseExpression();
+    if (expression.kind !== "Call") this.fail("E122", start);
+    this.endStatement("NAME(ARGS)");
+    return { kind: "CallStatement", call: expression, line: start.line, column: start.column };
+  }
+
+  /** Builds the "did you mean ...?" details for a word that is not a statement. */
+  private unknownStatementHint(word: string): Record<string, string> {
+    if (this.isSymbol("=", 1)) {
+      return { word, fix: `To give a name to a value, write: let ${word} = ...` };
+    }
+    if (word.toLowerCase() === "returnhome") {
+      return { word, fix: "Write return_home inside a safety: block, for example: return_home drone when drone.battery < 25%" };
+    }
+    const hint = STATEMENT_HINTS[word.toLowerCase()];
+    if (hint !== undefined) return { word, suggestion: hint };
+    const close = closestMatch(word, STATEMENT_WORDS);
+    if (close !== undefined && close === word.toLowerCase()) {
+      return { word, fix: `Did you mean '${close}'? Keywords are written in lower case.` };
+    }
+    return { word, suggestion: close ?? "" };
+  }
+
+  /** Reads an optional "lang CODE". The code may be any word, like hi, en, or (DECISIONS.md B7). */
+  protected parseLang(): string | null {
+    if (this.acceptKeyword("lang") === undefined) return null;
+    const code = this.peek();
+    if (code.kind !== "name" && code.kind !== "keyword") return this.failExpected("a language code such as en or hi");
+    this.advance();
+    return code.text;
+  }
+
+  // -------------------------------------------------------------------------
   // Helpers for tests and tools
   // -------------------------------------------------------------------------
 
@@ -295,6 +649,23 @@ export class Parser {
       throw error;
     }
   }
+}
+
+export interface ParseResult {
+  readonly program: Program;
+  /** Every problem from the lexer and the parser, in the order they appear in the file. */
+  readonly diagnostics: Diagnostic[];
+}
+
+/** Parses a whole program (or site map) from its source text. */
+export function parse(source: string): ParseResult {
+  const lexed = lex(source);
+  const parser = new Parser(lexed.tokens);
+  const program = parser.parseProgram();
+  const diagnostics = [...lexed.diagnostics, ...parser.diagnostics].sort(
+    (a, b) => a.line - b.line || a.column - b.column,
+  );
+  return { program, diagnostics };
 }
 
 /** Parses source text that holds a single value, such as "10cm + 5mm". */

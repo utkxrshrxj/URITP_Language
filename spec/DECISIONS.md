@@ -201,6 +201,8 @@ reject a doubtful program rather than guess.
     manifests, actuator state names and sensor names in manifests may be
     keywords. A sensor named with a keyword is reached in a program with
     `.sense("force")`, which uses text, so no clash arises.
+  - A `lang` code may be a keyword too, because some real language codes
+    are: `or` is Odia and `as` is Assamese. So `say "..." lang or` is valid.
   - Everywhere else, keywords cannot be used as names.
 
 ---
