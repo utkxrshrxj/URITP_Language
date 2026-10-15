@@ -1,0 +1,65 @@
+<!doctype html>
+<!-- The URITP browser demo: speak or type a request in English, Hindi or Hinglish, and watch it be
+     translated, checked and run on a simulated rover. Start it with: npm run demo -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>URITP demo</title>
+    <style>
+      :root { --bg: #fafaf7; --fg: #1f2328; --muted: #656d76; --line: #d0d7de; --good: #1a7f37; --bad: #b42318; --box: #ffffff; }
+      @media (prefers-color-scheme: dark) { :root { --bg: #0d1117; --fg: #e6edf3; --muted: #8d96a0; --line: #30363d; --good: #3fb950; --bad: #f85149; --box: #161b22; } }
+      body { margin: 0; padding: 24px 16px; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; }
+      main { max-width: 760px; margin: 0 auto; }
+      h1 { margin: 0 0 4px; font-size: 1.6rem; }
+      p.note { color: var(--muted); margin-top: 0; }
+      form { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 8px; }
+      input[type="text"] { flex: 1 1 260px; padding: 10px; font-size: 1rem; border: 1px solid var(--line); border-radius: 6px; background: var(--box); color: var(--fg); }
+      button, select { padding: 10px 14px; font-size: 1rem; border: 1px solid var(--line); border-radius: 6px; background: var(--box); color: var(--fg); cursor: pointer; }
+      .examples { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+      .examples button { padding: 4px 10px; font-size: 0.9rem; }
+      h2 { font-size: 1rem; margin: 20px 0 6px; color: var(--muted); }
+      pre, ol { margin: 0; padding: 12px; background: var(--box); border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1.5em; }
+      ol { padding-left: 36px; font-family: ui-monospace, monospace; font-size: 0.9rem; }
+      #verdict.good { color: var(--good); }
+      #verdict.bad { color: var(--bad); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>URITP demo</h1>
+      <p class="note">
+        A simulated rover in a pretend building with a kitchen, a door, a dock and a staircase it must never enter.
+        Requests are translated by the offline translator and checked before anything moves. Nothing here is real hardware.
+      </p>
+
+      <form id="form">
+        <input id="text" type="text" placeholder="e.g. rasoi mein jao" autocomplete="off" />
+        <select id="language" aria-label="Speech language">
+          <option value="en-IN">English</option>
+          <option value="hi-IN">हिन्दी</option>
+        </select>
+        <button id="speak" type="button">🎤 Speak</button>
+        <button type="submit">Run</button>
+      </form>
+      <div class="examples">
+        <button type="button" data-example="go to the kitchen">go to the kitchen</button>
+        <button type="button" data-example="rasoi mein jao aur photo lo">rasoi mein jao aur photo lo</button>
+        <button type="button" data-example="50 सेंटीमीटर आगे चलो">50 सेंटीमीटर आगे चलो</button>
+        <button type="button" data-example="turn left 90 degrees then say hello">turn left 90 degrees then say hello</button>
+        <button type="button" data-example="pick up the cup">pick up the cup (refused)</button>
+        <button type="button" data-example="go to the moon">go to the moon (not understood)</button>
+      </div>
+
+      <h2>Request</h2>
+      <pre id="request"></pre>
+      <h2>URITP program</h2>
+      <pre id="program"></pre>
+      <h2>Checker</h2>
+      <pre id="verdict"></pre>
+      <h2>Instructions the rover received</h2>
+      <ol id="instructions"></ol>
+    </main>
+    <script type="module" src="./demo.js"></script>
+  </body>
+</html>
