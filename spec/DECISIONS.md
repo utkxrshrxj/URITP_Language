@@ -703,6 +703,33 @@ reject a doubtful program rather than guess.
     motions apart, so nothing is approximated. A tolerance finer than the
     repeatability is refused (E423).
 
+### D40. How a spoken or typed request reaches a robot
+- **Guidebook:** a request in any language "is converted into URITP,
+  checked against the robot's manifest and the safety rules, and only then
+  carried out. A spoken request can never make a robot do anything a
+  written URITP program could not" (§9.4).
+- **Decision:**
+  - A translator only writes a program; it never moves a robot. Every
+    request goes through one function, `handleRequest`: translate, then the
+    same checks as a hand-written program (manifests, site map, names,
+    types, units, capabilities, safety), then run. If any check fails, the
+    program is rejected with its error codes and no robot receives a single
+    instruction.
+  - The translator is told the connected robots' parts, profiles and limits
+    and the site's places, so it can avoid most mistakes. It is still never
+    trusted.
+  - Two translators: an offline one with fixed phrases in English, Hindi and
+    Hinglish, which works without a key and refuses anything it does not
+    know; and an AI one using the official Anthropic SDK with
+    `claude-opus-5-5`. The AI one reads its key from the `ANTHROPIC_API_KEY`
+    environment variable (`URITP_AI_MODEL` can choose another model). With
+    no key it is not used, and the offline one is.
+  - The AI translator asks for a fixed JSON answer
+    (`understood, program, explanation, language`) and turns on the API's
+    server-side refusal fallback (`fallbacks: "default"`). A refusal,
+    service error or unreadable answer becomes a plain "not understood",
+    never a crash.
+
 ### D35. Which task state sequences are valid
 - **Guidebook:** a robot reports `accepted`, then `running`, then exactly
   one of `succeeded`, `failed(reason)` or `cancelled` (§9.3 rule 3). It also
