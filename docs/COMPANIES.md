@@ -71,6 +71,7 @@ are worded, and what is real versus simulated.
   - `drivers/universal-robots/ur-driver.ts`: the simulated driver, writing URScript-style text.
   - `drivers/universal-robots/urscript.ts`: URScript poses (rotation vectors) and numbers.
   - `drivers/universal-robots/README.md`: what each instruction becomes, and what it refuses.
+  - `drivers/universal-robots/index.ts`: the entry point the command line and conformance tests use to create the driver.
   - `drivers/universal-robots/ur-driver.test.ts`: the driver's tests.
 - **Driver:** moves become `movel(p[...], a=1.2, v=...)`, grips become
   `gripper_close(...)` and `gripper_open()`, and STOP becomes `stopl(3.0)`.

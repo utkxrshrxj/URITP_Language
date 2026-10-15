@@ -9,6 +9,7 @@ import { realClock } from "../../src/runtime/clock.js";
 import { lifecycleProblem, runTask } from "../../src/runtime/robot-port.js";
 import { runProgram } from "../../src/runtime/run-program.js";
 import { UniversalRobotsDriver } from "./ur-driver.js";
+import { createDriver } from "./index.js";
 import { rotationVector, urPose } from "./urscript.js";
 
 const manifestSource = readFileSync(new URL("../../manifests/universal-robots/ur-arm.uritp", import.meta.url), "utf8");
@@ -99,5 +100,9 @@ describe("Universal Robots driver", () => {
       "movel(p[0.3, -0.3, 0.12, 3.141593, 0.0, 0.0], a=1.2, v=0.2)",
       "gripper_open()",
     ]);
+  });
+
+  it("is created through its folder's entry point, as tools find it", () => {
+    expect(createDriver({ model })).toBeInstanceOf(UniversalRobotsDriver);
   });
 });
