@@ -161,7 +161,6 @@ robot stops and the program ends as failed (§8, D15).
 | R705 | a value could not be worked out while running | a worked-out percent of 110% (D12) |
 | R706 | it is not clear which robot should do something (D27, D30) | reading `mug.fill` with two robots that can see |
 | R707 | a robot connection or imported file is missing | no connection for robot `rover` |
-| R708 | something the runner cannot do yet | a program with a `safety:` block, until Phase 5 is finished |
 
 ## Codes fixed by the Guidebook
 

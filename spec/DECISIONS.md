@@ -642,6 +642,26 @@ reject a doubtful program rather than guess.
   to the enclosing block. Robots working together (for example two arms
   carrying one object) must not carry on as if nothing happened.
 
+### D37. How safety rules are watched while running
+- **Guidebook:** a `safety:` block "declares rules checked continuously
+  while the program runs", and each rule triggers its action "when a
+  condition becomes true" (§5).
+- **Decision:**
+  - Each rule is checked when the `safety:` block is reached, before every
+    instruction sent to any robot, and every short interval (0.2 s by
+    default) while anything is running.
+  - A rule fires when its condition changes from false to true, not again
+    while it stays true. A rule that is already true when it is first
+    checked fires at once.
+  - `alert` sends its message to the operator, and the program goes on.
+  - `stop`, `return_home` and `land` stop every robot, then carry out the
+    action on the named robot (STOP, `SKILL name=return_home` or
+    `SKILL name=land`). The program then ends as cancelled, with the rule's
+    line as the reason (D15).
+  - If a rule's condition cannot be read (for example a sensor fails), the
+    program is cancelled: a rule that cannot be checked cannot keep anyone
+    safe.
+
 ### D35. Which task state sequences are valid
 - **Guidebook:** a robot reports `accepted`, then `running`, then exactly
   one of `succeeded`, `failed(reason)` or `cancelled` (§9.3 rule 3). It also

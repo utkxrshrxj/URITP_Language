@@ -467,10 +467,6 @@ const messages: Record<string, MessageEntry> = {
     message: (a) => `something the program needs is missing: ${arg(a, "reason")}`,
     fix: () => "Connect every robot the program names, and give every file it imports.",
   },
-  R708: {
-    message: (a) => `the runner cannot do this: ${arg(a, "reason")}`,
-    fix: () => "",
-  },
 
   // ---- W6xx: portability warnings (Guidebook §7) ----
   W601: {

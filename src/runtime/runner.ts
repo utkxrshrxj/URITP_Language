@@ -7,7 +7,7 @@ import { missingProfile } from "../checker/capabilities.js";
 import * as codegen from "../codegen/codegen.js";
 import { conditionText } from "../codegen/condition.js";
 import { formatInstruction, type Instruction } from "../codegen/instruction.js";
-import type { Block, Expression, Program, Statement, TaskStatement } from "../parser/ast.js";
+import type { Block, Expression, Program, SafetyRule, Statement, TaskStatement } from "../parser/ast.js";
 import { parse } from "../parser/parser.js";
 import type { Dimension } from "../stdlib/units.js";
 import { CancelSignal, realClock, type Clock } from "./clock.js";
@@ -85,6 +85,15 @@ interface Context {
   readonly line: number;
   /** Robots used by this part of a parallel: block, so they can be stopped if another part fails. */
   readonly activeRobots: Set<string> | null;
+  /** True while checking safety rules, so that check does not start another check. */
+  readonly checkingSafety?: boolean;
+}
+
+/** A safety rule being watched, with the names it could see and whether it was true last time. */
+interface WatchedRule {
+  readonly rule: SafetyRule;
+  readonly ctx: Context;
+  wasTrue: boolean;
 }
 
 class BreakSignal {}
@@ -108,6 +117,12 @@ export class Runner {
   private readonly connected: string[] = [];
   /** Robots stopped by the program's own stop statement: their cancelled task is not a failure (D15). */
   private readonly stoppedByProgram = new Set<string>();
+  /** Safety rules being watched while the program runs (Guidebook §5, D37). */
+  private readonly rules: WatchedRule[] = [];
+  private watching: Promise<void> | null = null;
+  private checking: Promise<void> | null = null;
+  /** Cancelled when the program has finished, to end the watch on safety rules. */
+  private readonly finished = new CancelSignal();
 
   constructor(private readonly options: RunOptions) {
     this.clock = options.clock ?? realClock();
@@ -117,11 +132,9 @@ export class Runner {
   async run(): Promise<RunResult> {
     const ctx: Context = { scope: this.global, signal: this.programSignal, error: null, line: 0, activeRobots: null };
     try {
-      if (this.options.program.statements.some((s) => s.kind === "Safety")) {
-        throw new RunFailure("R708", "this runner cannot watch safety rules yet, so it will not start a program that has them");
-      }
       for (const siteMap of this.options.siteMaps ?? []) await this.loadFile(siteMap.source, ctx);
       await this.runStatements(this.options.program, ctx, this.global);
+      if (this.programSignal.cancelled) return this.result("cancelled", null);
       return this.result("succeeded", null);
     } catch (thrown) {
       if (thrown instanceof Cancelled || this.programSignal.cancelled) return this.result("cancelled", null);
@@ -131,6 +144,9 @@ export class Runner {
         return this.result("failed", { code: thrown.code, reason: thrown.reason, line: thrown.line });
       }
       throw thrown;
+    } finally {
+      this.finished.cancel("the program has finished");
+      await this.watching;
     }
   }
 
@@ -353,7 +369,10 @@ export class Runner {
       case "Native":
         throw new RunFailure("R701", "no URITP 0.1 robot accepts native code");
       case "Safety":
-        throw new RunFailure("R708", "this runner cannot watch safety rules yet");
+        for (const rule of s.rules) this.rules.push({ rule, ctx: { ...ctx, line: rule.line, checkingSafety: true }, wasTrue: false });
+        await this.checkRules();
+        this.watching ??= this.watchRules();
+        return;
     }
   }
 
@@ -453,6 +472,8 @@ export class Runner {
   /** Sends one instruction as a task and turns its outcome into a value or a failure. */
   private async send(robot: string, instr: Instruction, ctx: Context): Promise<TaskOutput | undefined> {
     const port = this.port(robot);
+    if (this.rules.length > 0 && ctx.checkingSafety !== true) await this.checkRules();
+    if (this.programSignal.cancelled) throw new Cancelled(this.programSignal.reason);
     if (ctx.signal.cancelled) throw new Cancelled(ctx.signal.reason);
     this.stoppedByProgram.delete(robot);
     ctx.activeRobots?.add(robot);
@@ -474,6 +495,69 @@ export class Runner {
     }
     if (outcome.rejected) throw new RunFailure("R701", `${verb} was refused by '${robot}': ${outcome.reason}`);
     throw new RunFailure("R703", `${verb} failed: ${outcome.reason}`);
+  }
+
+  // -------------------------------------------------------------------------
+  // Safety rules (Guidebook §5, DECISIONS.md D37)
+  // -------------------------------------------------------------------------
+
+  /** Checks every rule each poll interval until the program finishes or is cancelled. */
+  private async watchRules(): Promise<void> {
+    const poll = this.options.pollInterval ?? 0.2;
+    while (!this.finished.cancelled && !this.programSignal.cancelled) {
+      await this.checkRules();
+      await this.clock.sleep(poll, this.finished);
+    }
+  }
+
+  /** Checks the rules once; if a check is already going on, waits for that one instead. */
+  private checkRules(): Promise<void> {
+    this.checking ??= this.checkRulesNow().finally(() => {
+      this.checking = null;
+    });
+    return this.checking;
+  }
+
+  private async checkRulesNow(): Promise<void> {
+    for (const watched of this.rules) {
+      if (this.programSignal.cancelled) return;
+      let isTrue: boolean;
+      try {
+        isTrue = await this.evaluator(watched.ctx).condition(watched.rule.condition);
+      } catch (thrown) {
+        if (thrown instanceof Cancelled) return;
+        if (!(thrown instanceof RunFailure)) throw thrown;
+        // A rule that cannot be checked cannot keep anyone safe, so the program stops (D37).
+        await this.cancelProgram(`the safety rule on line ${watched.rule.line} could not be checked: ${thrown.reason}`);
+        return;
+      }
+      // A rule fires when its condition becomes true, not again while it stays true (§5).
+      const becameTrue = isTrue && !watched.wasTrue;
+      watched.wasTrue = isTrue;
+      if (becameTrue) await this.fire(watched);
+    }
+  }
+
+  /** Carries out a rule's action: alert, or stop the program and then stop, return home or land. */
+  private async fire({ rule, ctx }: WatchedRule): Promise<void> {
+    const evaluator = this.evaluator(ctx);
+    if (rule.action === "alert") {
+      const text = rule.message === null ? "" : show(await evaluator.evaluate(rule.message));
+      this.trace.push({ kind: "alert", text });
+      this.options.output?.alert(text);
+      return;
+    }
+    const robot = robotOf(await evaluator.evaluate(rule.robot as Expression));
+    const at = rule.at === null ? null : await evaluator.evaluate(rule.at);
+    await this.cancelProgram(`safety rule on line ${rule.line}: ${rule.action} ${robot}`);
+    if (rule.action === "return_home") await this.sendAnyway(robot, codegen.skill("return_home"), rule.line);
+    if (rule.action === "land") await this.sendAnyway(robot, codegen.skill("land", { at: at === null ? null : codegen.field(at) }), rule.line);
+  }
+
+  /** Sends a safety action after the program has been cancelled; nothing can stop it but STOP. */
+  private async sendAnyway(robot: string, instr: Instruction, line: number): Promise<void> {
+    const outcome = await runTask(this.port(robot), instr);
+    this.trace.push({ kind: "instruction", robot, line, text: formatInstruction(instr), state: outcome.state, reason: outcome.reason });
   }
 
   private port(robot: string): RobotPort {
