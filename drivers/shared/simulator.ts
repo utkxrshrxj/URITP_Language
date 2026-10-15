@@ -25,7 +25,10 @@ export interface SimulatorSettings {
   readonly start?: Readonly<Record<string, PoseSI>>;
   /** Objects the robot can find. Any other object cannot be found, and the task fails. */
   readonly objects?: Readonly<Record<string, SimulatedObject>>;
-  /** What each sensor reads, in SI units; a function is asked again for every reading. */
+  /**
+   * What each sensor reads, in SI units; a function is asked again for every reading. A sensor
+   * not listed reads 2 m if it measures length (nothing nearby), and 0 otherwise.
+   */
   readonly readings?: Readonly<Record<string, SimulatedReading | (() => SimulatedReading)>>;
   /** The battery level from 0 to 1, and how much it drops per metre moved. */
   readonly battery?: number;
@@ -314,7 +317,8 @@ export class SimulatedWorld {
       if (property === "id") return read(object.id ?? owner);
       return { duration: 0, failure: `cannot read '${property}' of '${owner}'`, apply: nothing };
     }
-    return read(0);
+    // Nothing nearby by default, so an unconfigured distance sensor does not look like a crash.
+    return read(this.info.model.sensors[sensor]?.dimension === "Length" ? 2 : 0);
   }
 
   private drain(metres: number): void {

@@ -97,6 +97,11 @@ describe("simulated driver", () => {
     expect((await runTask(robot, instruction("SENSE", { sensor: word("tray.loaded") }))).output).toEqual({ kind: "reading", value: false });
   });
 
+  it("reads 2 m from a distance sensor that has not been set, meaning nothing nearby", async () => {
+    const { robot } = driver();
+    expect((await runTask(robot, instruction("SENSE", { sensor: word("distance_front") }))).output).toEqual({ kind: "reading", value: 2 });
+  });
+
   it("saves a photo for capture", async () => {
     const { robot } = driver();
     await runTask(robot, instruction("SENSE", { sensor: word("camera"), save: text("roof.jpg") }));
