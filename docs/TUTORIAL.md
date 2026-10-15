@@ -900,11 +900,24 @@ move rover.base to places.kitchen speed 0.3m/s
 npm run uritp -- run docs/tutorial/09-safety.uritp --robot manifests/raspberry-pi/pi-rover.uritp
 ```
 
-While the rover drives, you will see it read its battery again and again
-(`rover <- SENSE sensor=battery`). That is the safety rule being watched. The
-simulated battery stays at 100%, so the rule never needs to act. A rule
-always names its robot, and can `stop` it, send it home with `return_home`,
-or raise an `alert`.
+```text
+Simulated robots only. Nothing is sent to real hardware.
+rover <- SENSE sensor=battery
+rover -> succeeded
+log: battery: 100%
+rover <- MOVE frame=base target=pose(4,1,0,0,0,0) speed=0.3
+rover -> succeeded
+The program ended: succeeded.
+```
+
+The one `SENSE` shown is the program's own `log` line reading the battery.
+The safety rule reads it too, before every instruction and every 0.2 seconds
+while the rover drives, but those readings are not shown, so they do not
+bury the program's own steps. The robot still receives them: add
+`--protocol` to see every battery read the driver sends. The simulated
+battery stays at 100%, so the rule never needs to act. A rule always names
+its robot, and can `stop` it, send it home with `return_home`, or raise an
+`alert`.
 
 ### 9.3 The robot checks too
 
