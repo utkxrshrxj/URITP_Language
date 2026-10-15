@@ -90,6 +90,18 @@ function needsPart(model: RobotModel, kind: "frame" | "actuator" | "sensor", nam
   return table[name] === undefined ? { code: "E409", args: { kind, name, robot: model.name } } : null;
 }
 
+/**
+ * Finding an object needs a way to perceive it: the vision profile, or manipulation, which includes
+ * object poses (Guidebook §7, DECISIONS.md D39). A robot with neither refuses object targets.
+ */
+function needsObjectFinding(model: RobotModel): Refusal | null {
+  if (model.profiles.includes("vision") || model.profiles.includes("manipulation")) return null;
+  return { code: "E401", args: { what: "finding objects", profile: "vision or manipulation", robot: model.name, supported: model.profiles.join(", ") } };
+}
+
+/** True if a field names an object the robot must find itself. */
+const isObject = (value: FieldValue | undefined): boolean => value?.kind === "object";
+
 /** Checks that a sensor name can be read (D30): a sensor, a robot property, or a dotted property. */
 function checkSense(model: RobotModel, sensor: string): Refusal | null {
   if (["battery", "state", "pose"].includes(sensor) || model.sensors[sensor] !== undefined) return null;
@@ -98,10 +110,8 @@ function checkSense(model: RobotModel, sensor: string): Refusal | null {
     if (model.actuators[owner] !== undefined) {
       return ACTUATOR_PROPERTIES.includes(property) ? null : { code: "E409", args: { kind: "property", name: sensor, robot: model.name } };
     }
-    // Reading an object's properties needs the robot to see it.
-    return model.profiles.includes("vision")
-      ? null
-      : { code: "E401", args: { what: "finding objects", profile: "vision", robot: model.name, supported: model.profiles.join(", ") } };
+    // Reading an object's properties needs a way to find it.
+    return needsObjectFinding(model);
   }
   return needsPart(model, "sensor", sensor);
 }
@@ -118,7 +128,8 @@ export function checkInstruction(info: DriverInfo, instr: Instruction): Refusal 
         needsPart(model, "frame", frame) ??
         (get("via") !== undefined ? needsProfile(model, "via") : null) ??
         (get("avoid") !== undefined ? needsProfile(model, "avoid") : null) ??
-        checkSpeed(model, frame, numberOf(get("speed")));
+        checkSpeed(model, frame, numberOf(get("speed"))) ??
+        (isObject(get("target")) ? needsObjectFinding(model) : null);
       if (problem !== null) return problem;
       const tolerance = numberOf(get("tolerance"));
       if (tolerance !== null && tolerance < info.repeatability - EPSILON) {
@@ -150,7 +161,8 @@ export function checkInstruction(info: DriverInfo, instr: Instruction): Refusal 
     }
     case "SKILL": {
       const name = wordOf(get("name"));
-      const problem = needsProfile(model, name);
+      const objectArgs = instr.fields.some(([key, value]) => key !== "name" && isObject(value));
+      const problem = needsProfile(model, name) ?? (objectArgs ? needsObjectFinding(model) : null);
       if (problem !== null) return problem;
       if (name === "weld") return checkSpeed(model, null, numberOf(get("speed")));
       if (name === "place" || name === "land") {

@@ -94,8 +94,13 @@ describe("checkInstruction", () => {
     expect(refusal(ARM, "NATIVE", { language: text("urscript"), code: text("x") })).toMatch(/^E405/);
   });
 
-  it("refuses to read an object's properties without vision", () => {
-    expect(refusal(ARM, "SENSE", { sensor: word("cup.fill") })).toMatch(/^E401 'finding objects' requires profile 'vision'/);
+  it("finds objects only with vision or manipulation (D39)", () => {
+    const cart: RobotModel = { ...ROVER, profiles: ["core", "navigation"] };
+    const cup: FieldValue = { kind: "object", name: "cup", helpers: [] };
+    expect(refusal(ARM, "SENSE", { sensor: word("cup.fill") })).toBeNull();
+    expect(refusal(ROVER, "MOVE", { frame: word("base"), target: cup })).toBeNull();
+    expect(refusal(cart, "SENSE", { sensor: word("cup.fill") })).toMatch(/^E401 'finding objects' requires profile 'vision or manipulation'/);
+    expect(refusal(cart, "MOVE", { frame: word("base"), target: cup })).toMatch(/^E401 'finding objects'/);
   });
 
   it("always accepts STOP, WAIT and STATUS", () => {

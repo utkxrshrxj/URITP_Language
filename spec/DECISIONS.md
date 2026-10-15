@@ -688,6 +688,21 @@ reject a doubtful program rather than guess.
   - A driver will not start without the corners of every zone its manifest
     forbids by name.
 
+### D39. Finding objects, and writing values in a robot's own steps
+- **Guidebook:** the `manipulation` profile adds "object poses", and
+  `vision` adds object detection (§7). Robots "never silently approximate"
+  (§1).
+- **Decision:**
+  - A robot can find an object (a target like `cup`, or a property like
+    `mug.fill`) only if it has the `vision` or `manipulation` profile. A
+    robot with neither, like a small rover with only `core` and
+    `navigation`, refuses such an instruction (E401).
+  - A driver may write a value in its robot's own steps (for example whole
+    millimetres or hundredths of a degree) only when the difference is
+    smaller than the robot's repeatability. The robot cannot tell the two
+    motions apart, so nothing is approximated. A tolerance finer than the
+    repeatability is refused (E423).
+
 ### D35. Which task state sequences are valid
 - **Guidebook:** a robot reports `accepted`, then `running`, then exactly
   one of `succeeded`, `failed(reason)` or `cancelled` (§9.3 rule 3). It also

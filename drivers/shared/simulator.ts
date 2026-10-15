@@ -102,7 +102,7 @@ export class SimulatedWorld {
       case "TURN": {
         const frame = wordOf(get("frame"));
         const angle = numberOf(get("angle")) ?? 0;
-        const speed = numberOf(get("speed")) ?? this.settings.defaultTurnSpeed ?? 0.5;
+        const speed = this.turnSpeedFor(numberOf(get("speed")));
         const start = this.pose(frame);
         return { duration: Math.abs(angle) / speed, apply: () => this.poses.set(frame, { ...start, yaw: start.yaw + angle }) };
       }
@@ -138,12 +138,17 @@ export class SimulatedWorld {
     }
   }
 
+  /** The turning speed to use, in radians per second: the one given, or the default. */
+  turnSpeedFor(given: number | null): number {
+    return given ?? this.settings.defaultTurnSpeed ?? 0.5;
+  }
+
   private actionTime(): number {
     return this.settings.actionTime ?? 0.5;
   }
 
   /** The speed to use: the one given, or the default, never above the robot's limits. */
-  private speedFor(frame: string, given: number | null): number {
+  speedFor(frame: string, given: number | null): number {
     if (given !== null) return given;
     const limits = [this.settings.defaultSpeed ?? 0.2];
     const frameLimit = this.info.model.frames[frame]?.maxSpeed;
