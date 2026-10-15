@@ -209,6 +209,10 @@ A robot can run a statement only if its manifest declares the profile
 | `tooling` | `weld` (together with `manipulation`), `spray` |
 
 - `turn` is allowed with any one of `navigation`, `legged` or `flight`.
+- `say`, `confirm`, `ask`, `pour` and `weld` name no robot, so they run on
+  the one connected robot that has the profile (D27).
+- A branch under `if ROBOT.has("NAME"):` that can never run is not checked
+  for profiles (D28).
 - Vendor extensions are allowed only if the manifest lists them.
 - `native` is not a profile. It always gets a W6xx warning, and since no v0.1
   robot accepts it, it is then rejected (D20).

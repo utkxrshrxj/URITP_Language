@@ -11,8 +11,9 @@ robots like an adapter:
    explanation and a suggested fix.
 4. A robot driver carries out the checked instructions.
 
-> **Status:** syntax, names, types and units are checked (Phases 2 and 3).
-> Manifests, capabilities and safety checks come next.
+> **Status:** a program is fully checked against its robots' manifests before
+> anything moves: syntax, names, types, units, capabilities and safety
+> (Phases 2 to 4). Code generation and the runner come next.
 
 ## Quick start
 
@@ -45,7 +46,7 @@ npm test
 | `spec/` | The formal grammar, the types and units table, and design decisions. |
 | `src/` | The compiler: `lexer`, `parser`, `diagnostics` (error messages), `checker`, `stdlib`, `codegen`, `runtime`, `nl` (voice and text layer), `cli`. |
 | `drivers/` | `shared/` driver interface, plus one folder per company. |
-| `manifests/` | Robot manifests (capabilities and safety limits), one folder per company. |
+| `manifests/` | Robot manifests (capabilities and safety limits), one folder per company, each with its own tests. |
 | `examples/` | Example URITP programs. |
 | `conformance/` | Conformance tests from Guidebook section 9.3. |
 | `tests/` | Unit tests (Vitest). |
@@ -66,8 +67,8 @@ any of these companies. See [docs/COMPANIES.md](docs/COMPANIES.md).
 | 1 | Language definition: grammar, types and units, decisions | Done |
 | 2 | Lexer and parser with E1xx errors | Done |
 | 3 | Names, types and units (E2xx, E3xx) | Done |
-| 4 | Manifests, capabilities and safety (E4xx, E5xx, W6xx) | Next |
-| 5 | Code generation and runner | |
+| 4 | Manifests, capabilities and safety (E4xx, E5xx, W6xx) | Done |
+| 5 | Code generation and runner | Next |
 | 6 | Drivers for the three companies | |
 | 7 | Voice and text layer | |
 | 8 | Command line, conformance tests, Hindi messages, v0.1.0 | |
