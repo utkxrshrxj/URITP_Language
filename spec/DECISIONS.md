@@ -662,6 +662,32 @@ reject a doubtful program rather than guess.
     program is cancelled: a rule that cannot be checked cannot keep anyone
     safe.
 
+### D38. What a URITP 0.1 driver does
+- **Guidebook:** a compatible robot rejects what it cannot do exactly
+  (§9.3 rule 4), obeys STOP from any state (rule 5), and enforces its own
+  safety limits "even if a program or instruction would break them" (rule 6).
+- **Decision:**
+  - Every driver runs in **simulator mode only**. A simulated world carries
+    out each instruction exactly and takes distance ÷ speed seconds. The
+    driver writes the lines it would send to the real robot in that robot's
+    own language, and records them. No line reaches hardware.
+  - Before doing anything, a driver checks every instruction again against
+    its manifest, whatever the program checker said. It refuses, with the
+    reason as its failed state, anything:
+    - it has no profile, part or extension for;
+    - over a speed or force limit;
+    - beyond its reach, or off the floor for a floor frame;
+    - inside a forbidden zone;
+    - finer than it can do exactly (E409, E421 to E423).
+  - A target only known while running, such as an object it finds, is
+    checked again as soon as it is found.
+  - The simulated robots plan straight lines only. If a straight line would
+    cross a zone to avoid or a forbidden zone, the task fails with that
+    reason, instead of taking some other path. A `via` route can lead
+    around it.
+  - A driver will not start without the corners of every zone its manifest
+    forbids by name.
+
 ### D35. Which task state sequences are valid
 - **Guidebook:** a robot reports `accepted`, then `running`, then exactly
   one of `succeeded`, `failed(reason)` or `cancelled` (§9.3 rule 3). It also
