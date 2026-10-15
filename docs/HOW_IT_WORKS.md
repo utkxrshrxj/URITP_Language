@@ -213,6 +213,9 @@ npm run uritp -- run examples/try-small-rover/drive_until_close.uritp --robot ma
 Programs run at real speed. Add `--speed 10` to run ten times faster, and
 press Ctrl+C at any moment to stop every robot.
 
+To learn to write programs like these yourself, follow
+[TUTORIAL.md](TUTORIAL.md), the step-by-step tutorial.
+
 Or open the browser demo, where you can type or speak a request:
 
 ```bash

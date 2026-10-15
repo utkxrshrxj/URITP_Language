@@ -21,7 +21,9 @@ robots like an adapter:
 
 New to URITP? [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) follows one
 request from the spoken words to a robot moving, without assuming any
-programming knowledge.
+programming knowledge. To learn to write URITP yourself,
+[docs/TUTORIAL.md](docs/TUTORIAL.md) teaches it step by step, with a program
+to run on a simulated robot in every chapter.
 
 ## Quick start
 
@@ -64,6 +66,8 @@ understood. Error codes are the same in English and Hindi, and are listed in
 
 ## The language
 
+- [docs/TUTORIAL.md](docs/TUTORIAL.md): a step-by-step tutorial, from a
+  two-line program to several robots at once.
 - [spec/GRAMMAR.md](spec/GRAMMAR.md): the formal grammar (tokens,
   indentation, every statement, site maps and manifests).
 - [spec/TYPES_AND_UNITS.md](spec/TYPES_AND_UNITS.md): units, types,
