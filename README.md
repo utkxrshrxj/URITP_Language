@@ -11,7 +11,7 @@ robots like an adapter:
    explanation and a suggested fix.
 4. A robot driver carries out the checked instructions.
 
-> **Status:** early setup (Phase 0). The language and compiler are not built yet.
+> **Status:** the language is defined (Phase 1). The compiler is not built yet.
 
 ## Quick start
 
@@ -24,6 +24,15 @@ npm install
 ```bash
 npm test
 ```
+
+## The language
+
+- [spec/GRAMMAR.md](spec/GRAMMAR.md): the formal grammar (tokens,
+  indentation, every statement, site maps and manifests).
+- [spec/TYPES_AND_UNITS.md](spec/TYPES_AND_UNITS.md): units, types,
+  operators and what each statement expects.
+- [spec/DECISIONS.md](spec/DECISIONS.md): every place where the examples or
+  the Guidebook needed a decision, and ideas that were not adopted.
 
 ## Project layout
 
@@ -51,8 +60,8 @@ any of these companies. See [docs/COMPANIES.md](docs/COMPANIES.md).
 | Phase | What it builds | Status |
 |---|---|---|
 | 0 | Repo, TypeScript, Vitest, docs folder, source documents | Done |
-| 1 | Language definition: grammar, types and units, decisions | Next |
-| 2 | Lexer and parser with E1xx errors | |
+| 1 | Language definition: grammar, types and units, decisions | Done |
+| 2 | Lexer and parser with E1xx errors | Next |
 | 3 | Names, types and units (E2xx, E3xx) | |
 | 4 | Manifests, capabilities and safety (E4xx, E5xx, W6xx) | |
 | 5 | Code generation and runner | |
