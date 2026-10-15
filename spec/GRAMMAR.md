@@ -402,8 +402,8 @@ native_stmt    = "native" "(" TEXT "," TEXT ")" ;
 | Statement | Allowed in |
 |---|---|
 | `robot`, `task`, `import`, `define`, `safety:` | top level only |
-| `return` | inside a task only |
-| `break` | inside a `for` or `repeat` loop only (not crossing into a task) |
+| `return` | inside a task only, and not inside `parallel:` |
+| `break` | inside a `for` or `repeat` loop only, and not inside `parallel:` |
 | `on fail:` | as the last item of any block, including the top level |
 | everything else | anywhere a statement is allowed |
 

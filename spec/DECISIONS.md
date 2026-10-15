@@ -246,6 +246,9 @@ reject a doubtful program rather than guess.
   - Top level only: `robot`, `task`, `import`, `define` and `safety:`.
   - Only inside a task: `return`.
   - Only inside a loop: `break`.
+  - Neither `return` nor `break` may be used inside `parallel:`, because
+    they would leave the task or loop while the other statements of the
+    `parallel:` block are still running.
   - Tasks are not nested.
   - `on fail:` must be the last item of its block. This includes the top
     level of the program, as in the §8 example.

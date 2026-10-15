@@ -6,26 +6,32 @@ import { closestMatch } from "../diagnostics/suggest.js";
 import { lex } from "../lexer/lexer.js";
 import { describeToken, type Token } from "../lexer/tokens.js";
 import type {
+  AlertStatement,
   Argument,
   AskExpression,
   BinaryOperator,
-  AlertStatement,
   Block,
+  BreakStatement,
   CallStatement,
   CaptureStatement,
   ConfirmStatement,
   DriveStatement,
   Expression,
+  ForStatement,
   GripStatement,
+  IfBranch,
+  IfStatement,
   ImportStatement,
   LandStatement,
   LetStatement,
   LogStatement,
   MoveStatement,
+  ParallelStatement,
   PickStatement,
   PlaceStatement,
   PourStatement,
   Program,
+  RepeatStatement,
   ReturnStatement,
   RobotStatement,
   SayStatement,
@@ -36,6 +42,8 @@ import type {
   TaskStatement,
   TextLiteral,
   TurnStatement,
+  WaitStatement,
+  WaitUntilStatement,
   WeldStatement,
 } from "./ast.js";
 
@@ -555,6 +563,18 @@ export class Parser {
         return this.parseSay();
       case "confirm":
         return this.parseConfirm();
+      case "if":
+        return this.parseIf();
+      case "for":
+        return this.parseFor();
+      case "repeat":
+        return this.parseRepeat();
+      case "break":
+        return this.parseBreak();
+      case "wait":
+        return this.parseWait();
+      case "parallel":
+        return this.parseParallel();
       default:
         return this.parseOtherKeyword(token);
     }
@@ -907,6 +927,92 @@ export class Parser {
     const lang = this.parseLang();
     this.endStatement(form);
     return { kind: "Confirm", question, lang, line: start.line, column: start.column };
+  }
+
+  // ---- Control flow (GRAMMAR.md 2.8) ----
+
+  private parseIf(): IfStatement {
+    const start = this.advance();
+    const branches: IfBranch[] = [];
+    const condition = this.parseExpression();
+    branches.push({ condition, body: this.parseBlock("the 'if' condition"), line: start.line, column: start.column });
+    for (;;) {
+      const elif = this.acceptKeyword("elif");
+      if (elif === undefined) break;
+      const elifCondition = this.parseExpression();
+      const body = this.parseBlock("the 'elif' condition");
+      branches.push({ condition: elifCondition, body, line: elif.line, column: elif.column });
+    }
+    let elseBody: Block | null = null;
+    if (this.acceptKeyword("else") !== undefined) {
+      if (this.isKeyword("if")) {
+        this.failExpected("':'", "", "Write 'elif CONDITION:' instead of 'else if'.");
+      }
+      elseBody = this.parseBlock("'else'");
+    }
+    return { kind: "If", branches, elseBody, line: start.line, column: start.column };
+  }
+
+  private parseFor(): ForStatement {
+    const form = "for NAME in LIST:";
+    const start = this.advance();
+    const variable = this.expectName("a name for each item", form);
+    this.expectKeyword("in", form);
+    const list = this.parseExpression();
+    const body = this.parseBlock("the 'for' line", { canBreak: true });
+    return { kind: "For", variable: variable.text, list, body, line: start.line, column: start.column };
+  }
+
+  private parseRepeat(): RepeatStatement {
+    const form = "repeat N times: / repeat every Q: / repeat forever:";
+    const start = this.advance();
+    let mode: RepeatStatement["mode"];
+    let count: Expression | null = null;
+    let interval: Expression | null = null;
+    if (this.acceptKeyword("forever") !== undefined) {
+      mode = "forever";
+    } else if (this.acceptKeyword("every") !== undefined) {
+      mode = "every";
+      interval = this.parseExpression();
+    } else {
+      if (this.isKeyword("for")) {
+        // repeat for 30min, from example iv (DECISIONS.md A11).
+        this.failExpected("a number of times, 'every' or 'forever'", form, "URITP has no 'repeat for'. Use repeat forever: with a check like 'if now() >= 30min: break'.");
+      }
+      mode = "times";
+      count = this.parseExpression();
+      this.expectKeyword("times", form);
+    }
+    const body = this.parseBlock("the 'repeat' line", { canBreak: true });
+    return { kind: "Repeat", mode, count, interval, body, line: start.line, column: start.column };
+  }
+
+  private parseBreak(): BreakStatement {
+    const start = this.advance();
+    this.endStatement("break");
+    return { kind: "Break", line: start.line, column: start.column };
+  }
+
+  private parseWait(): WaitStatement | WaitUntilStatement {
+    const start = this.advance();
+    const at = { line: start.line, column: start.column };
+    if (this.acceptKeyword("until") !== undefined) {
+      const form = "wait until CONDITION [timeout Q]";
+      const condition = this.parseExpression();
+      const timeout = this.acceptKeyword("timeout") === undefined ? null : this.parseExpression();
+      this.endStatement(form);
+      return { kind: "WaitUntil", condition, timeout, ...at };
+    }
+    const duration = this.parseExpression();
+    this.endStatement("wait Q / wait until CONDITION [timeout Q]");
+    return { kind: "Wait", duration, ...at };
+  }
+
+  private parseParallel(): ParallelStatement {
+    const start = this.advance();
+    // break and return would leave while other parts are still running (DECISIONS.md C6).
+    const body = this.parseBlock("'parallel'", { canBreak: false, canReturn: false });
+    return { kind: "Parallel", body, line: start.line, column: start.column };
   }
 
   /** Builds the "did you mean ...?" details for a word that is not a statement. */
