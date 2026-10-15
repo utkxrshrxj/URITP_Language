@@ -100,7 +100,7 @@ are worded, and what is real versus simulated.
   - `drivers/raspberry-pi/pi-driver.ts`: the simulated driver and its JSON command messages.
   - `drivers/raspberry-pi/README.md`: what each instruction becomes, and what it refuses.
   - `drivers/raspberry-pi/index.ts`: the entry point the command line and conformance tests use to create the driver.
-  - `drivers/raspberry-pi/pi-driver.test.ts`: the driver's tests.
+  - `drivers/raspberry-pi/pi-driver.test.ts`: the driver's tests, including running `examples/try-camera-rover/rounds.uritp` through the command line.
 - **Driver:** each instruction becomes JSON command messages for `motors`,
   `camera`, `sensors` and `system` services on the Pi, such as
   `{"service":"motors","command":"go_to",...}`. STOP sends
