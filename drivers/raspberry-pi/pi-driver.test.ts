@@ -9,6 +9,7 @@ import { realClock } from "../../src/runtime/clock.js";
 import { lifecycleProblem, runTask } from "../../src/runtime/robot-port.js";
 import { runProgram } from "../../src/runtime/run-program.js";
 import { RaspberryPiDriver } from "./pi-driver.js";
+import { createDriver } from "./index.js";
 
 const manifestSource = readFileSync(new URL("../../manifests/raspberry-pi/pi-rover.uritp", import.meta.url), "utf8");
 const model = checkManifest(manifestSource).model!;
@@ -83,5 +84,9 @@ describe("Raspberry Pi rover driver", () => {
     expect(result?.state).toBe("succeeded");
     expect(driver.world.photos).toEqual(["at_dock.jpg", "at_desk.jpg"]);
     expect(driver.world.pose("base")).toMatchObject({ x: 3, y: 2 });
+  });
+
+  it("is created through its folder's entry point, as tools find it", () => {
+    expect(createDriver({ model })).toBeInstanceOf(RaspberryPiDriver);
   });
 });

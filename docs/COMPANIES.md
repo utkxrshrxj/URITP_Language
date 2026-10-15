@@ -99,6 +99,7 @@ are worded, and what is real versus simulated.
   - `manifests/raspberry-pi/manifest.test.ts`: checks the manifest and that programs are accepted or rejected against it.
   - `drivers/raspberry-pi/pi-driver.ts`: the simulated driver and its JSON command messages.
   - `drivers/raspberry-pi/README.md`: what each instruction becomes, and what it refuses.
+  - `drivers/raspberry-pi/index.ts`: the entry point the command line and conformance tests use to create the driver.
   - `drivers/raspberry-pi/pi-driver.test.ts`: the driver's tests.
 - **Driver:** each instruction becomes JSON command messages for `motors`,
   `camera`, `sensors` and `system` services on the Pi, such as
