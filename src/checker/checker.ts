@@ -228,17 +228,25 @@ export class Checker {
     }
   }
 
-  /** Checks a block in its own scope. `setup` binds names first, like a loop variable. */
+  /**
+   * Checks a block in its own scope. `setup` binds names first, like a loop variable or a task's
+   * inputs. The block's on fail: can use those names, but not the block's own lets, which may
+   * not have run when the failure happened (DECISIONS.md D42).
+   */
   protected checkBlock(block: Block, setup: (scope: Scope) => void = () => {}): void {
     const outer = this.scope;
-    this.scope = new Scope(outer);
+    const own = new Scope(outer);
+    const start = new Scope(outer);
+    this.scope = own;
     try {
-      setup(this.scope);
+      setup(own);
+      for (const [name, binding] of own.ownBindings()) start.define(name, binding);
       for (const statement of block.statements) this.checkStatement(statement);
+      this.scope = start;
+      this.checkOnFail(block.onFail);
     } finally {
       this.scope = outer;
     }
-    this.checkOnFail(block.onFail);
   }
 
   /** on fail: runs with error holding the failed task's result (Guidebook §8). */

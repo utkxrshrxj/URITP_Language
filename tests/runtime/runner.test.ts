@@ -133,6 +133,20 @@ describe("failures and on fail (Guidebook §8, D15)", () => {
   );
   const blocked = (line: string): Response => (line.includes("pose(5,") ? { fail: "path blocked at places.corridor_2" } : {});
 
+  it("lets a task's on fail use the task's inputs", async () => {
+    const program = lines(
+      'robot rover = connect("office:rover-2")',
+      "task go(spot):",
+      "    move rover.base to spot",
+      "    on fail:",
+      "        log spot.name, error.code",
+      "go(places.lab)",
+    );
+    const { result, logs } = await run(program, { robots: { rover: blocked }, site: SITE });
+    expect(result.state).toBe("succeeded");
+    expect(logs).toEqual(["lab, R703"]);
+  });
+
   it("runs on fail with error.code and error.reason, skipping the rest of the block", async () => {
     const { result, robots, logs } = await run(source, { robots: { rover: blocked }, site: SITE });
     expect(result.state).toBe("succeeded");

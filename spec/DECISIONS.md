@@ -759,6 +759,18 @@ reject a doubtful program rather than guess.
     or a robot that stops answering) breaks the lifecycle. The runner then
     treats the task as failed (R704).
 
+### D42. What `on fail:` can see
+- **Guidebook:** `on fail:` says what to do when a task in its block fails
+  (§8). It does not say which names it can use.
+- **Conflict:** the checker checked a block's `on fail:` outside the block,
+  so a task's `on fail:` could not use the task's own inputs, although the
+  runner already gave them to it. The URITP playground accepts this, for
+  example `say "Skipping {spot.name}"` in `on fail:` of `task fetch(spot):`.
+- **Decision:** a block's `on fail:` can use the names the block starts
+  with: a task's inputs, or a `for` loop's variable. It cannot use names the
+  block binds with `let`, because the failure may have happened before that
+  `let` ran (E202).
+
 ---
 
 ## Proposed, not adopted

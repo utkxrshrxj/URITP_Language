@@ -190,6 +190,34 @@ describe("on fail and error (Guidebook §8)", () => {
     expect(run(source)).toEqual([]);
   });
 
+  it("lets a task's on fail use the task's inputs, and a loop's on fail its variable (D42)", () => {
+    const source = lines(
+      "task go(spot):",
+      "    move rover.base to spot",
+      "    on fail:",
+      '        alert "I could not reach {spot.name}"',
+      "        log spot.name",
+      "for spot in route.patrol:",
+      "    move rover.base to spot",
+      "    on fail:",
+      "        log spot.name",
+      "go(places.lab)",
+    );
+    expect(run(source)).toEqual([]);
+  });
+
+  it("keeps a block's own lets out of its on fail, since they may not have run (D42)", () => {
+    const source = lines(
+      "task go(spot):",
+      "    let there = spot",
+      "    move rover.base to there",
+      "    on fail:",
+      "        log there.name",
+      "go(places.lab)",
+    );
+    expect(run(source)).toEqual(["E202"]);
+  });
+
   it("rejects error outside on fail (E216)", () => {
     expect(run("log error.reason")).toEqual(["E216"]);
   });
