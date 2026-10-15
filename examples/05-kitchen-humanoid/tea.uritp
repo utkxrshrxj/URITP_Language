@@ -1,0 +1,16 @@
+# Example v: a humanoid robot pours tea in a kitchen using both hands.
+# Cleaned up from spec-source/URITP - Google Docs.pdf, following spec/DECISIONS.md:
+#   A13 counter.spot_a became places.counter_spot_a
+# mug and kettle are objects the robot finds with its own sensors (D4).
+# The hands are both frames (for move) and actuators (for grip) (D8).
+
+robot helper = connect("home:humanoid")
+move helper.base to places.counter
+move helper.right_hand to mug.handle
+grip helper.right_hand close
+move helper.left_hand to kettle.handle
+grip helper.left_hand close
+
+pour from kettle into mug until mug.fill >= 80%
+place kettle on places.counter_spot_a using helper.left_hand
+say "Your tea is ready"

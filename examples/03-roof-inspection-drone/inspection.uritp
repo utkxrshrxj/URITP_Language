@@ -1,0 +1,18 @@
+# Example iii: a drone flies over a roof, takes a photo at each point and lands.
+# Cleaned up from spec-source/URITP - Google Docs.pdf, following spec/DECISIONS.md:
+#   A3  returnhome became return_home
+#   A5  places.launch_padiv became places.launch_pad
+#   A6  takeoff drone(15m) became takeoff drone to 15m
+#   A9  the safety rule is written ACTION when CONDITION, naming the robot
+#   A10 capture and save as are one statement
+
+robot drone = connect("field:drone-7")
+
+safety:
+    return_home drone when drone.battery < 25%
+
+takeoff drone to 15m
+for point in route.roof_inspect:
+    move drone.base to point.at_height(10m)
+    capture drone.camera save as "roof_{point.id}.jpg"
+land drone at places.launch_pad

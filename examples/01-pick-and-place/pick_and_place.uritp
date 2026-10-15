@@ -1,0 +1,17 @@
+# Example i: a robot arm picks up an object and puts it down at a destination.
+# Cleaned up from spec-source/URITP - Google Docs.pdf, following spec/DECISIONS.md:
+#   A1  disp became say
+#   A8  on fail lines up with the statements it protects
+# cup and tray are objects the robot finds with its own sensors (D4).
+
+robot arm = connect("sim:panda")
+
+task pick_and_place(obj, dest):
+    move arm.tool to obj.above(10cm)
+    grip arm.gripper close
+    move arm.tool to dest.above(10cm) speed 0.2m/s
+    grip arm.gripper open
+    on fail:
+        say "I couldn't complete that"
+
+pick_and_place(cup, tray)

@@ -1,0 +1,8 @@
+# Site map for the night patrol example.
+# Illustrative positions only, not a real factory.
+
+define place charger      = pose(1m, 1m, 0m)
+define place press_line   = pose(12m, 4m, 0m)
+define place boiler_room  = pose(25m, 9m, 0m)
+define place loading_bay  = pose(8m, 20m, 0m)
+define route night_patrol = [places.press_line, places.boiler_room, places.loading_bay]

@@ -1,0 +1,6 @@
+# Site map for the office delivery example.
+# Illustrative positions only, not a real building.
+
+define place mailroom = pose(2m, 1m, 0m)
+define place desk_14  = pose(18m, 7.5m, 0m, yaw=90deg)
+define place dock     = pose(0.5m, 0.5m, 0m)

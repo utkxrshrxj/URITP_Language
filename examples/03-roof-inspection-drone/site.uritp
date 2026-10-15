@@ -1,0 +1,8 @@
+# Site map for the roof inspection example.
+# Illustrative positions only, not a real site.
+
+define place launch_pad = pose(0m, 0m, 0m)
+define place roof_north = pose(20m, 30m, 0m)
+define place roof_east  = pose(35m, 15m, 0m)
+define place roof_south = pose(20m, 0m, 0m)
+define route roof_inspect = [places.roof_north, places.roof_east, places.roof_south]

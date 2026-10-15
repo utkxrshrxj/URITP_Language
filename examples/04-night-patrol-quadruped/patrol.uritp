@@ -1,0 +1,19 @@
+# Example iv: a robot dog patrols a factory at night and raises an alert at hot spots.
+# Cleaned up from spec-source/URITP - Google Docs.pdf, following spec/DECISIONS.md:
+#   A4  80cdeg became 80deg_c
+#   A10 capture and save as are one statement
+#   A11 repeat for 30min is not URITP. Instead the loop checks the time after
+#       each round, so the last round always finishes before the patrol stops.
+# As in the original, the dog goes back to its charger at the end of every round.
+
+robot dog = connect("plant:quad-1")
+
+repeat forever:
+    for checkpoint in route.night_patrol:
+        move dog.base to checkpoint
+        if dog.sense("thermal").max > 80deg_c:
+            alert "Hot spot at {checkpoint.name}"
+            capture dog.camera save as "hotspot.jpg"
+    move dog.base to places.charger
+    if now() >= 30min:
+        break

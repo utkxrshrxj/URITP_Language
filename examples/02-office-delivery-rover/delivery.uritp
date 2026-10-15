@@ -1,0 +1,14 @@
+# Example ii: a wheeled rover collects a parcel from the mailroom and delivers it to a desk.
+# Cleaned up from spec-source/URITP - Google Docs.pdf, following spec/DECISIONS.md:
+#   A1  disp became say (so this rover needs the speech profile)
+#   A7  no comma before speed
+# The places come from site.uritp in this folder (D16).
+
+robot rover = connect("office:rover-2")
+move rover.base to places.mailroom
+say "Please place the parcel on my tray"
+wait until rover.tray.loaded timeout 2min
+move rover.base to places.desk_14 speed 0.8m/s
+say "Parcel for you"
+wait until not rover.tray.loaded timeout 5min
+move rover.base to places.dock

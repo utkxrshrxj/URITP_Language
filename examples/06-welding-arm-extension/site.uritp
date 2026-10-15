@@ -1,0 +1,7 @@
+# Site map for the welding example.
+# Illustrative positions only, not a real production line.
+
+define place home       = pose(0.3m, 0m, 0.5m)
+define place seam_start = pose(0.6m, -0.2m, 0.1m)
+define place seam_end   = pose(0.6m, 0.2m, 0.1m)
+define route seam       = [places.seam_start, places.seam_end]

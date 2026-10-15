@@ -1,0 +1,5 @@
+# Site map for the kitchen example.
+# Illustrative positions only, not a real kitchen.
+
+define place counter        = pose(3m, 2m, 0m, yaw=180deg)
+define place counter_spot_a = pose(3.4m, 2.3m, 0.9m)

@@ -1,0 +1,13 @@
+# Example vi: an industrial welding arm uses a vendor extension when it has one.
+# Cleaned up from spec-source/URITP - Google Docs.pdf, following spec/DECISIONS.md:
+#   A2  5mms became 5mm/s
+#   A12 the seam is route.seam and its start is places.seam_start
+# "examplecorp" is the made-up vendor name the Guidebook uses for extensions.
+
+robot welder = connect("line3:examplecorp-x7")
+move welder.tool to places.seam_start
+if welder.has("examplecorp.adaptive_weld"):
+    examplecorp.adaptive_weld(route.seam, current=180A)
+else:
+    weld along route.seam speed 5mm/s current 180A
+move welder.tool to places.home
