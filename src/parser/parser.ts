@@ -508,6 +508,10 @@ export class Parser {
     if (this.isSymbol(",")) {
       this.failExpected("the end of the line", form, "Remove the comma. The parts of a statement follow each other without commas.");
     }
+    if (this.isKeyword("on") && this.isKeyword("fail", 1)) {
+      // on fail indented one level too deep, as in the original example i (DECISIONS.md A8).
+      this.failExpected("the end of the line", form, "Line up 'on fail:' with the statements of the block it protects.");
+    }
     this.failExpected("the end of the line", form);
   }
 
@@ -610,6 +614,13 @@ export class Parser {
       case "on":
         this.advance();
         return this.failExpected("'fail'", "on fail:");
+      case "save":
+        // save as on its own line, as in the original examples iii and iv (DECISIONS.md A10).
+        return this.failExpected(
+          "a statement",
+          "",
+          "'save as' belongs to the capture above it. Put it on the same line, or indent it 4 more spaces.",
+        );
       default:
         return this.failExpected("a statement");
     }

@@ -22,6 +22,8 @@ export function lex(source: string): LexResult {
   let statementIndent: number | null = null;
   /** Whether the last line we read ended with ':' and so opens a block. */
   let opensBlock = false;
+  /** Indentation of the last line we read; a block must be 4 spaces deeper than its ':' line. */
+  let lastIndent = 0;
   /** Where the last line we read ended, for placing NEWLINE tokens. */
   let lastLine = 1;
   let lastColumn = 1;
@@ -73,7 +75,9 @@ export function lex(source: string): LexResult {
       // The line above ended with ':', so this line should start a block 4 spaces deeper.
       marker("newline", lastLine, lastColumn);
       if (indent > top()) {
-        if (indent !== top() + 4) error("E105", lineNumber, 1);
+        // Normally the ':' line is at the top depth. After an E107 it is a continuation line,
+        // so a block 4 spaces deeper than that line is accepted too, to avoid a second error.
+        if (indent !== top() + 4 && indent !== lastIndent + 4) error("E105", lineNumber, 1);
         blocks.push(indent);
         marker("indent", lineNumber, indent + 1);
       } else {
@@ -97,6 +101,7 @@ export function lex(source: string): LexResult {
 
     tokens.push(...lineTokens);
     opensBlock = endsWithColon;
+    lastIndent = indent;
     lastLine = lineNumber;
     lastColumn = raw.length + 1;
   });
