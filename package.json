@@ -5,6 +5,9 @@
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
+  "bin": {
+    "uritp": "dist/src/cli/main.js"
+  },
   "engines": {
     "node": ">=20"
   },
@@ -13,7 +16,8 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.drivers.json && tsc -p tsconfig.build.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "demo": "npm run build && node scripts/serve-demo.mjs"
+    "demo": "npm run build && node scripts/serve-demo.mjs",
+    "uritp": "node dist/src/cli/main.js"
   },
   "repository": {
     "type": "git",
