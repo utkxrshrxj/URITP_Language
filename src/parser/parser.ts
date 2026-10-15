@@ -15,6 +15,7 @@ import type {
   CallStatement,
   CaptureStatement,
   ConfirmStatement,
+  DefineStatement,
   DriveStatement,
   Expression,
   ForStatement,
@@ -26,6 +27,7 @@ import type {
   LetStatement,
   LogStatement,
   MoveStatement,
+  NativeStatement,
   ParallelStatement,
   PickStatement,
   PlaceStatement,
@@ -34,6 +36,8 @@ import type {
   RepeatStatement,
   ReturnStatement,
   RobotStatement,
+  SafetyRule,
+  SafetyStatement,
   SayStatement,
   SprayStatement,
   Statement,
@@ -81,6 +85,9 @@ const STATEMENT_HINTS: Readonly<Record<string, string>> = {
   const: "let",
   set: "let",
 };
+
+/** The actions a safety rule can take (Guidebook §5, DECISIONS.md C9). */
+const SAFETY_ACTIONS = ["stop", "return_home", "land", "alert"];
 
 /** What the statement being read is allowed to contain (DECISIONS.md C6). */
 interface Context {
@@ -575,6 +582,12 @@ export class Parser {
         return this.parseWait();
       case "parallel":
         return this.parseParallel();
+      case "safety":
+        return this.parseSafety();
+      case "native":
+        return this.parseNative();
+      case "define":
+        return this.parseDefine();
       default:
         return this.parseOtherKeyword(token);
     }
@@ -1013,6 +1026,110 @@ export class Parser {
     // break and return would leave while other parts are still running (DECISIONS.md C6).
     const body = this.parseBlock("'parallel'", { canBreak: false, canReturn: false });
     return { kind: "Parallel", body, line: start.line, column: start.column };
+  }
+
+  // ---- Safety and native code (GRAMMAR.md 2.8) ----
+
+  /** safety: followed by a block of rules. The rules are not statements, so this reads its own block. */
+  private parseSafety(): SafetyStatement {
+    const start = this.advance();
+    const at = { line: start.line, column: start.column };
+    if (!this.isSymbol(":")) this.fail("E101", this.peek(), { after: "'safety'" });
+    this.advance();
+    if (this.peek().kind !== "newline") {
+      this.failExpected("the end of the line after ':'", "", "Start the rules on the next line, indented by 4 more spaces.");
+    }
+    this.advance();
+    if (this.peek().kind !== "indent") {
+      this.report("E104", this.peek());
+      return { kind: "Safety", rules: [], ...at };
+    }
+    this.advance();
+    const rules: SafetyRule[] = [];
+    while (this.peek().kind !== "dedent" && this.peek().kind !== "eof") {
+      if (this.peek().kind === "newline") {
+        this.advance();
+        continue;
+      }
+      try {
+        rules.push(this.parseSafetyRule());
+      } catch (error) {
+        if (!(error instanceof ParseError)) throw error;
+        this.synchronize();
+      }
+    }
+    if (this.peek().kind === "dedent") this.advance();
+    return { kind: "Safety", rules, ...at };
+  }
+
+  /** ACTION when CONDITION, where the action names its robot (DECISIONS.md C9). */
+  private parseSafetyRule(): SafetyRule {
+    const form = "ACTION when CONDITION";
+    const start = this.peek();
+    let robot: Expression | null = null;
+    let place: Expression | null = null;
+    let message: TextLiteral | null = null;
+
+    if (start.kind === "keyword" && start.text === "when") {
+      // The when COND: block form from example iii (DECISIONS.md A9).
+      this.failExpected("a safety action", form, "Write the action first, for example: return_home drone when drone.battery < 25%");
+    }
+    if (start.kind !== "keyword" || !SAFETY_ACTIONS.includes(start.text)) {
+      if (start.kind === "keyword" || start.kind === "name") {
+        this.fail("E131", start, { word: start.text, suggestion: closestMatch(start.text, SAFETY_ACTIONS) ?? "" });
+      }
+      this.failExpected("a safety action", form);
+    }
+    this.advance();
+    const action = start.text as SafetyRule["action"];
+    if (action === "alert") {
+      message = this.expectText("a message in double quotes", 'alert "TEXT" when CONDITION');
+    } else {
+      robot = this.parseExpression();
+      if (action === "land" && this.acceptKeyword("at") !== undefined) place = this.parseExpression();
+    }
+    this.expectKeyword("when", form);
+    const condition = this.parseExpression();
+    this.endStatement(form);
+    return { action, robot, at: place, message, condition, line: start.line, column: start.column };
+  }
+
+  private parseNative(): NativeStatement {
+    const form = 'native("LANGUAGE", "CODE")';
+    const start = this.advance();
+    this.expectSymbol("(", form);
+    const language = this.expectText("the language name in double quotes", form);
+    this.requireConstantText(language, "native language name");
+    this.expectSymbol(",", form);
+    const code = this.expectText("the code in double quotes", form);
+    this.requireConstantText(code, "native code");
+    this.expectSymbol(")", form);
+    this.endStatement(form);
+    return { kind: "Native", language, code, line: start.line, column: start.column };
+  }
+
+  // ---- Site maps (GRAMMAR.md 3.1) ----
+
+  private parseDefine(): DefineStatement {
+    const form = "define place|zone|route NAME = VALUE";
+    const start = this.advance();
+    const what = this.peek();
+    const isPlace = what.kind === "keyword" && what.text === "place";
+    const isZoneOrRoute = what.kind === "name" && (what.text === "zone" || what.text === "route");
+    if (!isPlace && !isZoneOrRoute) this.failExpected("'place', 'zone' or 'route'", form);
+    this.advance();
+    const name = this.expectName("a name", form);
+    this.expectSymbol("=", form);
+    const value = this.parseExpression();
+    this.endStatement(form);
+    return {
+      kind: "Define",
+      what: what.text as DefineStatement["what"],
+      name: name.text,
+      value,
+      line: start.line,
+      column: start.column,
+    };
   }
 
   /** Builds the "did you mean ...?" details for a word that is not a statement. */
