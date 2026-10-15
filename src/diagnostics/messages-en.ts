@@ -366,6 +366,24 @@ const messages: Record<string, MessageEntry> = {
     message: (a) => `actuator '${arg(a, "actuator")}' of '${arg(a, "robot")}' has no state '${arg(a, "state")}'`,
     fix: (a) => `Its states are: ${arg(a, "states")}. grip ... open needs the state open, and grip ... close needs closed.`,
   },
+  E409: {
+    message: (a) => `'${arg(a, "robot")}' has no ${arg(a, "kind")} '${arg(a, "name")}'`,
+    fix: () => "Send only instructions for parts listed in the robot's manifest.",
+  },
+
+  // ---- E42x: what a driver refuses because it cannot do it exactly (Guidebook §9.3 rule 4) ----
+  E421: {
+    message: (a) => `the target is ${arg(a, "distance")} away, beyond the reach of frame '${arg(a, "frame")}' of '${arg(a, "robot")}' (${arg(a, "reach")})`,
+    fix: () => "Choose a target within the robot's reach. A robot never moves somewhere else instead.",
+  },
+  E422: {
+    message: (a) => `frame '${arg(a, "frame")}' of '${arg(a, "robot")}' moves on the floor, so it cannot reach a target above the floor or tilted`,
+    fix: () => "Give a target at height 0m with no roll or pitch.",
+  },
+  E423: {
+    message: (a) => `'${arg(a, "robot")}' cannot do ${arg(a, "value")} exactly; it works in steps of ${arg(a, "step")}`,
+    fix: () => "Use a value the robot can do exactly. A robot never rounds a motion and does something slightly different.",
+  },
 
   // ---- E41x: problems in a manifest (Guidebook §9.1) ----
   E410: {

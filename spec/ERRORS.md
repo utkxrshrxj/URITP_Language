@@ -110,6 +110,20 @@ searchable (§8). The English wording lives in
 | E407 | a fixed force more than the actuator can apply (its `max_force`) | `force 200N` on a gripper with `max_force 140N` |
 | E408 | `grip` asking for a state the actuator does not have | `grip rover.tray close` on a tray with states `[empty, loaded]` |
 
+## E409 and E42x: what a driver refuses (Phase 6)
+
+A driver checks every instruction again before doing it, whatever the program
+checker said, and refuses anything it cannot do exactly (§9.3 rules 4 and 6).
+Its refusal reason starts with one of the codes above (E401, E402, E405 to
+E408, E501, E502) or one of these. The runner turns a refusal into R701.
+
+| Code | Meaning | Example |
+|---|---|---|
+| E409 | the robot has no part with that name | `ACTUATE actuator=gripper` sent to a rover |
+| E421 | a target beyond the reach of the frame | an arm with reach 850mm asked to go 1.2m away |
+| E422 | a target a frame on the floor cannot take | a rover base asked to go to a height of 1m |
+| E423 | a value finer than the robot can do exactly | 12.3mm for a robot that moves in whole millimetres |
+
 ## E41x: problems in a manifest (Phase 4)
 
 A manifest describes what a robot can do (§9.1), so its problems use the
