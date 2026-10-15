@@ -36,7 +36,7 @@ import {
   ROBOT_PROPERTIES,
   type Signature,
 } from "../stdlib/signatures.js";
-import { isUnit, UNITS, type Dimension } from "../stdlib/units.js";
+import { isUnit, SUGGESTED_UNIT, UNITS, type Dimension } from "../stdlib/units.js";
 import { evaluateConstant, type Constant } from "./constants.js";
 import type { RobotModel } from "./robot-model.js";
 import { Scope, type Binding } from "./scope.js";
@@ -93,20 +93,6 @@ interface SiteEntry {
   readonly type: Type;
   readonly line: number;
 }
-
-/** The unit suggested when a bare number is given for a dimension (TYPES_AND_UNITS.md section 4). */
-const SUGGESTED_UNIT: Readonly<Record<Dimension, string>> = {
-  Length: "cm",
-  Speed: "m/s",
-  Time: "s",
-  Angle: "deg",
-  AngularSpeed: "deg/s",
-  Force: "N",
-  Current: "A",
-  Volume: "ml",
-  Mass: "kg",
-  Temperature: "deg_c",
-};
 
 /** Kinds of value that can be inserted into text with { } (DECISIONS.md B6). */
 const SHOWABLE: readonly Type["kind"][] = ["Number", "Quantity", "Percent", "Text", "Bool"];

@@ -49,6 +49,24 @@ export const UNITS: Readonly<Record<string, UnitInfo>> = {
 
 export const UNIT_NAMES: readonly string[] = Object.keys(UNITS);
 
+export const DIMENSIONS: readonly Dimension[] = [
+  "Length", "Angle", "Time", "Speed", "AngularSpeed", "Mass", "Force", "Current", "Volume", "Temperature",
+];
+
+/** The unit suggested when a bare number is given for a dimension (TYPES_AND_UNITS.md section 4). */
+export const SUGGESTED_UNIT: Readonly<Record<Dimension, string>> = {
+  Length: "cm",
+  Speed: "m/s",
+  Time: "s",
+  Angle: "deg",
+  AngularSpeed: "deg/s",
+  Force: "N",
+  Current: "A",
+  Volume: "ml",
+  Mass: "kg",
+  Temperature: "deg_c",
+};
+
 export function isUnit(name: string): boolean {
   return Object.hasOwn(UNITS, name);
 }
