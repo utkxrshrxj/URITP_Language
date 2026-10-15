@@ -1,0 +1,11 @@
+# Company: Raspberry Pi
+# Reference manifest for a small wheeled rover built on a Raspberry Pi, run in simulator mode only.
+# Written from public documentation. Values are illustrative: replace with datasheet values
+# for your own motors, wheels and sensors before using it with a real robot. Not tested on real hardware.
+manifest "Raspberry Pi camera rover (reference, simulated)":
+    uritp 0.1
+    frame base: pose2d max_speed 0.5m/s payload 1kg
+    sensor camera: rgb
+    sensor distance_front: ultrasonic dimension Length
+    profiles [core, navigation, vision]
+    safety max_speed 0.3m/s
