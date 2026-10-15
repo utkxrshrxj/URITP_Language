@@ -11,15 +11,27 @@ import type {
   BinaryOperator,
   Block,
   CallStatement,
+  DriveStatement,
   Expression,
+  GripStatement,
   ImportStatement,
+  LandStatement,
   LetStatement,
+  MoveStatement,
+  PickStatement,
+  PlaceStatement,
+  PourStatement,
   Program,
   ReturnStatement,
   RobotStatement,
+  SprayStatement,
   Statement,
+  StopStatement,
+  TakeoffStatement,
   TaskStatement,
   TextLiteral,
+  TurnStatement,
+  WeldStatement,
 } from "./ast.js";
 
 /** Thrown to give up on the current statement after an error has been recorded. */
@@ -504,6 +516,30 @@ export class Parser {
         return this.parseReturn();
       case "import":
         return this.parseImport();
+      case "move":
+        return this.parseMove();
+      case "drive":
+        return this.parseDrive();
+      case "turn":
+        return this.parseTurn();
+      case "takeoff":
+        return this.parseTakeoff();
+      case "land":
+        return this.parseLand();
+      case "stop":
+        return this.parseStop();
+      case "grip":
+        return this.parseGrip();
+      case "pick":
+        return this.parsePick();
+      case "place":
+        return this.parsePlace();
+      case "pour":
+        return this.parsePour();
+      case "weld":
+        return this.parseWeld();
+      case "spray":
+        return this.parseSpray();
       default:
         return this.parseOtherKeyword(token);
     }
@@ -606,6 +642,207 @@ export class Parser {
     if (expression.kind !== "Call") this.fail("E122", start);
     this.endStatement("NAME(ARGS)");
     return { kind: "CallStatement", call: expression, line: start.line, column: start.column };
+  }
+
+  // ---- Motion (GRAMMAR.md 2.4) ----
+
+  /**
+   * Reads optional clauses such as "speed 0.5m/s tolerance 1cm", in any order (DECISIONS.md C2).
+   * Each may appear once, except those listed in `repeatable`.
+   */
+  private parseOptions(
+    allowed: readonly string[],
+    form: string,
+    repeatable: readonly string[] = [],
+  ): Map<string, Expression[]> {
+    const options = new Map<string, Expression[]>();
+    for (;;) {
+      const next = this.peek(1);
+      if (this.isSymbol(",") && next.kind === "keyword" && allowed.includes(next.text)) {
+        this.failExpected(
+          `'${next.text}'`,
+          form,
+          `Remove the comma before '${next.text}'. Clauses follow each other without commas.`,
+        );
+      }
+      const clause = this.peek();
+      if (clause.kind !== "keyword" || !allowed.includes(clause.text)) return options;
+      this.advance();
+      const values = options.get(clause.text) ?? [];
+      if (values.length > 0 && !repeatable.includes(clause.text)) {
+        this.report("E124", clause, { clause: clause.text });
+      }
+      values.push(this.parseExpression());
+      options.set(clause.text, values);
+    }
+  }
+
+  private static first(options: Map<string, Expression[]>, clause: string): Expression | null {
+    return options.get(clause)?.[0] ?? null;
+  }
+
+  private parseMove(): MoveStatement {
+    const form = "move FRAME to TARGET [speed Q] [tolerance Q] [via ROUTE] [avoid ZONE]";
+    const start = this.advance();
+    const frame = this.parseExpression();
+    this.expectKeyword("to", form);
+    const target = this.parseExpression();
+    const options = this.parseOptions(["speed", "tolerance", "via", "avoid"], form, ["avoid"]);
+    this.endStatement(form);
+    return {
+      kind: "Move",
+      frame,
+      target,
+      speed: Parser.first(options, "speed"),
+      tolerance: Parser.first(options, "tolerance"),
+      via: Parser.first(options, "via"),
+      avoid: options.get("avoid") ?? [],
+      line: start.line,
+      column: start.column,
+    };
+  }
+
+  private parseDrive(): DriveStatement {
+    const form = "drive FRAME forward/backward [by Q] [speed Q]";
+    const start = this.advance();
+    const frame = this.parseExpression();
+    const direction = this.acceptKeyword("forward") ?? this.acceptKeyword("backward");
+    if (direction === undefined) this.failExpected("'forward' or 'backward'", form);
+    const options = this.parseOptions(["by", "speed"], form);
+    this.endStatement(form);
+    return {
+      kind: "Drive",
+      frame,
+      direction: direction.text as "forward" | "backward",
+      distance: Parser.first(options, "by"),
+      speed: Parser.first(options, "speed"),
+      line: start.line,
+      column: start.column,
+    };
+  }
+
+  private parseTurn(): TurnStatement {
+    const form = "turn FRAME by ANGLE [speed Q]";
+    const start = this.advance();
+    const frame = this.parseExpression();
+    this.expectKeyword("by", form);
+    const angle = this.parseExpression();
+    const options = this.parseOptions(["speed"], form);
+    this.endStatement(form);
+    return { kind: "Turn", frame, angle, speed: Parser.first(options, "speed"), line: start.line, column: start.column };
+  }
+
+  private parseTakeoff(): TakeoffStatement {
+    const form = "takeoff ROBOT to HEIGHT";
+    const start = this.advance();
+    const robot = this.parseExpression();
+    if (!this.isKeyword("to") && robot.kind === "Call" && robot.callee.kind === "Name" && robot.args.length === 1) {
+      // takeoff drone(15m), as in the original example iii (DECISIONS.md A6).
+      const height = robot.args[0]?.value;
+      const shown = height?.kind === "Quantity" ? height.raw : "HEIGHT";
+      this.failExpected("'to'", form, `Write: takeoff ${robot.callee.name} to ${shown}`);
+    }
+    this.expectKeyword("to", form);
+    const height = this.parseExpression();
+    this.endStatement(form);
+    return { kind: "Takeoff", robot, height, line: start.line, column: start.column };
+  }
+
+  private parseLand(): LandStatement {
+    const form = "land ROBOT [at PLACE]";
+    const start = this.advance();
+    const robot = this.parseExpression();
+    const at = this.acceptKeyword("at") === undefined ? null : this.parseExpression();
+    this.endStatement(form);
+    return { kind: "Land", robot, at, line: start.line, column: start.column };
+  }
+
+  private parseStop(): StopStatement {
+    const start = this.advance();
+    const robot = this.parseExpression();
+    this.endStatement("stop ROBOT");
+    return { kind: "Stop", robot, line: start.line, column: start.column };
+  }
+
+  // ---- Manipulation (GRAMMAR.md 2.5) ----
+
+  private parseGrip(): GripStatement {
+    const form = "grip ACTUATOR open/close [force Q]";
+    const start = this.advance();
+    const actuator = this.parseExpression();
+    const action = this.acceptKeyword("open") ?? this.acceptKeyword("close");
+    if (action === undefined) this.failExpected("'open' or 'close'", form);
+    const options = this.parseOptions(["force"], form);
+    this.endStatement(form);
+    return {
+      kind: "Grip",
+      actuator,
+      action: action.text as "open" | "close",
+      force: Parser.first(options, "force"),
+      line: start.line,
+      column: start.column,
+    };
+  }
+
+  private parsePick(): PickStatement {
+    const form = "pick OBJECT using ROBOT [onto FRAME]";
+    const start = this.advance();
+    const object = this.parseExpression();
+    this.expectKeyword("using", form);
+    const robot = this.parseExpression();
+    const onto = this.acceptKeyword("onto") === undefined ? null : this.parseExpression();
+    this.endStatement(form);
+    return { kind: "Pick", object, robot, onto, line: start.line, column: start.column };
+  }
+
+  private parsePlace(): PlaceStatement {
+    const form = "place OBJECT on TARGET using FRAME";
+    const start = this.advance();
+    const object = this.parseExpression();
+    this.expectKeyword("on", form);
+    const target = this.parseExpression();
+    this.expectKeyword("using", form);
+    const frame = this.parseExpression();
+    this.endStatement(form);
+    return { kind: "Place", object, target, frame, line: start.line, column: start.column };
+  }
+
+  private parsePour(): PourStatement {
+    const form = "pour from OBJECT into OBJECT until CONDITION";
+    const start = this.advance();
+    this.expectKeyword("from", form);
+    const from = this.parseExpression();
+    this.expectKeyword("into", form);
+    const into = this.parseExpression();
+    this.expectKeyword("until", form);
+    const until = this.parseExpression();
+    this.endStatement(form);
+    return { kind: "Pour", from, into, until, line: start.line, column: start.column };
+  }
+
+  private parseWeld(): WeldStatement {
+    const form = "weld along PATH speed Q current Q";
+    const start = this.advance();
+    this.expectKeyword("along", form);
+    const path = this.parseExpression();
+    this.expectKeyword("speed", form);
+    const speed = this.parseExpression();
+    this.expectKeyword("current", form);
+    const current = this.parseExpression();
+    this.endStatement(form);
+    return { kind: "Weld", path, speed, current, line: start.line, column: start.column };
+  }
+
+  private parseSpray(): SprayStatement {
+    const form = "spray ACTUATOR on TARGET amount Q";
+    const start = this.advance();
+    const actuator = this.parseExpression();
+    this.expectKeyword("on", form);
+    const target = this.parseExpression();
+    this.expectKeyword("amount", form);
+    const amount = this.parseExpression();
+    this.endStatement(form);
+    return { kind: "Spray", actuator, target, amount, line: start.line, column: start.column };
   }
 
   /** Builds the "did you mean ...?" details for a word that is not a statement. */
