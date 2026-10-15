@@ -574,6 +574,26 @@ reject a doubtful program rather than guess.
     an error (E503): a zone the checker cannot locate cannot be kept out of.
   - Turning speeds have no manifest limit (see "Proposed, not adopted").
 
+### D30. Reading robot and object values with SENSE
+- **Gap:** programs read `rover.battery`, `rover.state`, `rover.pose`,
+  actuator properties like `rover.tray.loaded`, and object properties like
+  `mug.fill` (§6). But the instruction set (§9.2) has no instruction for any
+  of these, only `SENSE sensor` for "the latest reading".
+- **Decision:** all of them are read with `SENSE`, using the dotted name as
+  the sensor:
+  - `SENSE sensor=battery`, `SENSE sensor=state`, `SENSE sensor=pose` for
+    robot properties. Every robot answers these three.
+  - `SENSE sensor=tray.loaded` for an actuator property.
+  - `SENSE sensor=mug.fill`, `SENSE sensor=mug.id` and `SENSE sensor=mug.pose`
+    for an object the robot can perceive.
+  - `SENSE sensor=camera analyse=cup` for `.analyse(cup)` (vision profile).
+  - Answers use SI units, with percents as fractions (D14).
+  - `.has(...)` is never sent to a robot: it is answered from the manifest
+    (D28).
+  - An object's properties are read by the program's robot. If several
+    robots are connected, the one with the `vision` profile is asked; if
+    that is still not exactly one, the read fails while running (R706).
+
 ### D35. Which task state sequences are valid
 - **Guidebook:** a robot reports `accepted`, then `running`, then exactly
   one of `succeeded`, `failed(reason)` or `cancelled` (§9.3 rule 3). It also
