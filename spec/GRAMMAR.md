@@ -130,7 +130,8 @@ A file is a manifest file when its first statement starts with `manifest`.
 
 Some keywords may also be used as names in a few exact places (B7): as
 named-argument labels (`current=180A`), as extension parameter names in
-manifests, and as actuator state names (`states [open, closed]`).
+manifests, as actuator state names (`states [open, closed]`) and as sensor
+names in manifests (`sensor force: wrench`).
 
 ## 1.6 Numbers, quantities and percents
 
@@ -219,8 +220,8 @@ on_fail        = "on" "fail" block ;
 - A block needs at least one statement.
 - `on fail:` is optional and must be the last item in its block (C6). It
   lines up with the statements of the block it protects (A8).
-- Inside a task or a loop, `statement` also allows `return` and `break`; the
-  placement rules are in section 2.9.
+- `return` and `break` are part of `statement` everywhere in the grammar, but
+  section 2.9 limits where they may actually appear.
 
 ## 2.2 Statements
 
@@ -482,3 +483,118 @@ program
 │       └── say_stmt "I couldn't complete that"
 └── call_stmt       pick_and_place(cup, tray)
 ```
+
+---
+
+# Part 3: Site maps and manifests
+
+## 3.1 Site maps (§6)
+
+A site map is an ordinary `.uritp` file that holds only `define` lines and
+comments (D16). It names the places, zones and routes of one site.
+
+```ebnf
+site_map       = { define_stmt } EOF ;
+
+(* define place NAME = EXPR, define zone NAME = EXPR, define route NAME = EXPR *)
+define_stmt    = "define" ( "place" | "zone" | "route" ) NAME "=" expression NEWLINE ;
+```
+
+- A place is a pose.
+- A zone is `polygon(...)` with three or more poses.
+- A route is a list of places or poses.
+
+Once loaded, they are used as `places.NAME`, `zones.NAME` and `route.NAME`.
+(`route` is singular, exactly as the Guidebook writes it.) `define` is used
+instead of `place` so it never clashes with the `place` statement.
+
+```
+define place kitchen = pose(4.2m, 1.0m, 0m, yaw=90deg)
+define place door    = pose(0m, 3.5m, 0m)
+define zone icu      = polygon(pose(10m, 0m, 0m), pose(14m, 0m, 0m),
+    pose(14m, 6m, 0m), pose(10m, 6m, 0m))
+define route night_patrol = [places.kitchen, places.door]
+```
+
+The long `define zone` line is split with a continuation line (B5).
+
+## 3.2 Manifests (§9.1)
+
+A manifest describes one robot model: its frames, actuators, sensors,
+profiles, extensions and safety limits.
+
+```ebnf
+manifest_file  = "manifest" TEXT ":" NEWLINE
+                 INDENT manifest_entry { manifest_entry } DEDENT EOF ;
+
+manifest_entry = ( uritp_entry | frame_entry | actuator_entry | sensor_entry
+                 | profiles_entry | extension_entry | safety_entry ) NEWLINE ;
+
+(* uritp VERSION *)
+uritp_entry    = "uritp" NUMBER ;
+
+(* frame NAME: TYPE [reach Q] [max_speed Q] [payload Q] *)
+frame_entry    = "frame" NAME ":" frame_type { frame_option } ;
+frame_type     = "pose2d" | "pose3d" | "pose6d" ;
+frame_option   = "reach" QUANTITY | "max_speed" QUANTITY | "payload" QUANTITY ;
+
+(* actuator NAME: states [LIST] [max_force Q] *)
+actuator_entry = "actuator" NAME ":" "states" "[" state { "," state } "]"
+                 [ "max_force" QUANTITY ] ;
+state          = NAME | keyword ;               (* e.g. open (B7) *)
+
+(* sensor NAME: KIND [dimension D] *)
+sensor_entry   = "sensor" sensor_name ":" NAME [ "dimension" dimension ] ;
+sensor_name    = NAME | keyword ;               (* e.g. force (B7) *)
+dimension      = "Length" | "Angle" | "Time" | "Speed" | "AngularSpeed"
+               | "Mass" | "Force" | "Current" | "Volume" | "Temperature" ;
+
+(* profiles [LIST] *)
+profiles_entry = "profiles" "[" profile { "," profile } "]" ;
+profile        = "core" | "navigation" | "manipulation" | "flight"
+               | "legged" | "speech" | "vision" | "tooling" ;
+
+(* extension VENDOR.NAME(PARAM: TYPE, ...) *)
+extension_entry = "extension" NAME "." NAME
+                  "(" [ ext_param { "," ext_param } ] ")" ;
+ext_param      = label ":" type ;
+type           = NAME [ "<" type ">" ] ;        (* e.g. Route, Quantity<Current> *)
+
+(* safety max_speed Q / safety forbidden_zone ZONE *)
+safety_entry   = "safety" ( "max_speed" QUANTITY | "forbidden_zone" expression ) ;
+```
+
+Words such as `pose6d`, `reach`, `max_speed`, `states` and `dimension` are
+ordinary names that only have a special meaning in these positions.
+
+Rules the parser checks after reading a manifest:
+
+| Entry | How many |
+|---|---|
+| `uritp` | exactly one, and the version is `0.1` |
+| `profiles` | exactly one, and it includes `core` (§9.1) |
+| `frame`, `actuator`, `sensor`, `extension` | any number; names unique within each kind (a frame and an actuator may share a name, D8) |
+| `safety` | any number |
+
+- Each `frame_option` may appear once per frame.
+- `forbidden_zone` takes `zones.NAME` or a `polygon(...)` (D19).
+- The manifest name must be constant text (B6).
+
+The Guidebook's example manifest:
+
+```
+manifest "ExampleCorp X7 Arm":
+    uritp 0.1
+    frame tool: pose6d reach 0.85m max_speed 1.5m/s payload 5kg
+    actuator gripper: states [open, closed] max_force 140N
+    sensor camera: rgb
+    sensor force: wrench
+    profiles [core, manipulation, vision]
+    extension examplecorp.adaptive_weld(seam: Route, current: Quantity<Current>)
+    safety max_speed 1.5m/s
+```
+
+> Note: `sensor force: wrench` names a sensor `force`, but `force` is
+> reserved in every file (§3). Sensor names may be keywords (B7), so the
+> Guidebook's own example stays valid. In a program, that sensor is reached
+> with `robot.sense("force")`, which uses text, so no clash arises.

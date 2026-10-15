@@ -192,11 +192,15 @@ reject a doubtful program rather than guess.
   `to(q, unit)` (§6). `current` is a keyword (`weld ... current Q`) and also a
   named argument in `examplecorp.adaptive_weld(seam, current=180A)` (§7).
   `open` is a keyword and also an actuator state in `states [open, closed]` (§9.1).
+  `force` is a keyword and also the name of a sensor in the §9.1 example
+  manifest (`sensor force: wrench`).
 - **Decision:**
   - `to` followed directly by `(` where a value is expected is the built-in
     function.
   - Named-argument labels (`current=`), extension parameter names in
-    manifests and actuator state names may be keywords.
+    manifests, actuator state names and sensor names in manifests may be
+    keywords. A sensor named with a keyword is reached in a program with
+    `.sense("force")`, which uses text, so no clash arises.
   - Everywhere else, keywords cannot be used as names.
 
 ---
