@@ -574,6 +574,20 @@ reject a doubtful program rather than guess.
     an error (E503): a zone the checker cannot locate cannot be kept out of.
   - Turning speeds have no manifest limit (see "Proposed, not adopted").
 
+### D35. Which task state sequences are valid
+- **Guidebook:** a robot reports `accepted`, then `running`, then exactly
+  one of `succeeded`, `failed(reason)` or `cancelled` (§9.3 rule 3). It also
+  rejects an instruction it cannot perform exactly (rule 4), and obeys `STOP`
+  "from any state" (rule 5).
+- **Decision:** three sequences are valid:
+  - `accepted, running, succeeded|failed|cancelled`: the normal case.
+  - `failed` alone: the robot refused the instruction straight away, with a
+    reason (rule 4). It never accepted the goal, so it never ran.
+  - `accepted, cancelled`: the robot was stopped before it started (rule 5).
+  - Anything else (no final state, two final states, states out of order,
+    or a robot that stops answering) breaks the lifecycle. The runner then
+    treats the task as failed (R704).
+
 ---
 
 ## Proposed, not adopted
