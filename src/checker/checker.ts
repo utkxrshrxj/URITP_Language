@@ -38,8 +38,10 @@ import {
 } from "../stdlib/signatures.js";
 import { isUnit, SUGGESTED_UNIT, UNITS, type Dimension } from "../stdlib/units.js";
 import { acceptForType, missingProfile, robotHas } from "./capabilities.js";
+import { compare, format, type Quantity } from "../stdlib/quantity.js";
 import { evaluateConstant, type Constant } from "./constants.js";
-import type { RobotModel } from "./robot-model.js";
+import { constantPoint, constantPolygon, insidePolygon, type Point } from "./geometry.js";
+import type { Corner, RobotModel } from "./robot-model.js";
 import { Scope, type Binding } from "./scope.js";
 import {
   acceptName,
@@ -89,10 +91,16 @@ export interface CheckResult {
   readonly diagnostics: Diagnostic[];
 }
 
-/** A place, zone or route from a site map. */
+/** A place, zone or route from a site map, with its fixed position in metres when known. */
 interface SiteEntry {
   readonly type: Type;
   readonly line: number;
+  /** A place's position. */
+  readonly point?: Point | null;
+  /** A zone's corners. */
+  readonly corners?: readonly Corner[] | null;
+  /** A route's points, when every one is fixed. */
+  readonly points?: readonly Point[] | null;
 }
 
 /** Kinds of value that can be inserted into text with { } (DECISIONS.md B6). */
@@ -160,6 +168,8 @@ export class Checker {
   private deadDepth = 0;
   /** Extensions guarded by an enclosing if ROBOT.has("vendor.feature"): (Guidebook §7). */
   private readonly guards: string[] = [];
+  /** Where each robot was connected, to report a forbidden zone missing from the site map there. */
+  private readonly robotLines = new Map<string, Position>();
 
   constructor(private readonly options: CheckOptions = {}) {}
 
@@ -203,6 +213,18 @@ export class Checker {
     for (const siteMap of this.options.siteMaps ?? []) this.checkOtherFile(siteMap.name, siteMap.source, "site map");
     for (const statement of program.statements) this.checkStatement(statement);
     this.checkOnFail(program.onFail);
+    this.checkForbiddenZonesExist();
+  }
+
+  /** Every zone a manifest forbids by name must be in the site map, or it cannot be kept out of (E503). */
+  private checkForbiddenZonesExist(): void {
+    for (const [robot, model] of this.robots) {
+      for (const zone of model?.safety?.forbiddenZones ?? []) {
+        if (zone.kind === "named" && this.site.zones.get(zone.name)?.corners == null) {
+          this.report("E503", this.robotLines.get(robot) ?? { line: 1, column: 1 }, { zone: zone.name, robot });
+        }
+      }
+    }
   }
 
   /** Checks a block in its own scope. `setup` binds names first, like a loop variable. */
@@ -306,13 +328,19 @@ export class Checker {
         for (const zone of statement.avoid) this.expectValue(zone, ZONE_ONLY, "avoid");
         if (statement.via !== null) this.requireProfile(frame, "via", statement.via);
         if (statement.avoid[0] !== undefined) this.requireProfile(frame, "avoid", statement.avoid[0]);
+        this.checkSpeedLimits(frame, statement.speed);
+        this.checkNotForbidden(frame, statement.target);
+        if (statement.via !== null) this.checkRouteNotForbidden(frame, statement.via);
         return;
       }
-      case "Drive":
-        this.requireProfile(this.expectValue(statement.frame, FRAME, "the frame to drive"), "drive", statement);
+      case "Drive": {
+        const frame = this.expectValue(statement.frame, FRAME, "the frame to drive");
+        this.requireProfile(frame, "drive", statement);
         this.optional(statement.distance, amountOf("Length"), "by");
         this.optional(statement.speed, amountOf("Speed"), "speed");
+        this.checkSpeedLimits(frame, statement.speed);
         return;
+      }
       case "Turn":
         this.requireProfile(this.expectValue(statement.frame, FRAME, "the frame to turn"), "turn", statement);
         this.expectValue(statement.angle, amountOf("Angle"), "the angle to turn by");
@@ -322,29 +350,39 @@ export class Checker {
         this.requireProfile(this.expectValue(statement.robot, ROBOT, "the robot to take off"), "takeoff", statement);
         this.expectValue(statement.height, amountOf("Length"), "the height");
         return;
-      case "Land":
-        this.requireProfile(this.expectValue(statement.robot, ROBOT, "the robot to land"), "land", statement);
+      case "Land": {
+        const robot = this.expectValue(statement.robot, ROBOT, "the robot to land");
+        this.requireProfile(robot, "land", statement);
         this.optional(statement.at, PLACE_ONLY, "at");
+        if (statement.at !== null) this.checkNotForbidden(robot, statement.at);
         return;
+      }
       case "Stop":
         this.expectValue(statement.robot, ROBOT, "the robot to stop");
         return;
 
       // Manipulation
-      case "Grip":
-        this.requireProfile(this.expectValue(statement.actuator, ACTUATOR, "the gripper or hand"), "grip", statement);
+      case "Grip": {
+        const actuator = this.expectValue(statement.actuator, ACTUATOR, "the gripper or hand");
+        this.requireProfile(actuator, "grip", statement);
         this.optional(statement.force, amountOf("Force"), "force");
+        this.checkGrip(actuator, statement.action, statement.force, statement);
         return;
+      }
       case "Pick":
         this.expectValue(statement.object, OBJECT_ONLY, "the object to pick");
         this.requireProfile(this.expectValue(statement.robot, ROBOT, "using"), "pick", statement);
         this.optional(statement.onto, FRAME, "onto");
         return;
       case "Place":
+      {
         this.expectValue(statement.object, OBJECT_ONLY, "the object to place");
         this.expectValue(statement.target, TARGET, "on");
-        this.requireProfile(this.expectValue(statement.frame, FRAME, "using"), "place", statement);
+        const frame = this.expectValue(statement.frame, FRAME, "using");
+        this.requireProfile(frame, "place", statement);
+        this.checkNotForbidden(frame, statement.target);
         return;
+      }
       case "Pour":
         this.expectValue(statement.from, OBJECT_ONLY, "from");
         this.expectValue(statement.into, OBJECT_ONLY, "into");
@@ -355,7 +393,10 @@ export class Checker {
         this.expectValue(statement.path, ROUTE, "the path to weld along");
         this.expectValue(statement.speed, amountOf("Speed"), "speed");
         this.expectValue(statement.current, amountOf("Current"), "current");
-        this.requireSomeRobot("weld", statement);
+        {
+          const welder = this.requireSomeRobot("weld", statement);
+          if (welder !== null) this.checkSpeedLimits({ kind: "Robot", robot: welder }, statement.speed);
+        }
         return;
       case "Spray":
         this.requireProfile(this.expectValue(statement.actuator, ACTUATOR, "the sprayer"), "spray", statement);
@@ -458,8 +499,16 @@ export class Checker {
     else if (!this.boundAnywhere.has(task.name)) this.boundAnywhere.set(task.name, task.line);
   }
 
-  /** Checks a task body with the given parameter types and returns the type it gives back. */
-  private checkTaskBody(task: TaskStatement, definedIn: Scope, params: readonly Type[]): Type {
+  /**
+   * Checks a task body with the given parameter types and returns the type it gives back.
+   * Fixed argument values (like 3m/s) are passed in too, so limits are checked per call.
+   */
+  private checkTaskBody(
+    task: TaskStatement,
+    definedIn: Scope,
+    params: readonly Type[],
+    fixed: readonly (Constant | null)[] = [],
+  ): Type {
     const outerScope = this.scope;
     const outerReturns = this.returns;
     this.scope = definedIn;
@@ -467,7 +516,11 @@ export class Checker {
     this.taskStack.push(task.name);
     try {
       this.checkBlock(task.body, () => {
-        task.params.forEach((param, index) => this.bind(param, params[index] ?? UNKNOWN, task, true));
+        task.params.forEach((param, index) => {
+          const binding = this.bind(param, params[index] ?? UNKNOWN, task, true);
+          const value = fixed[index];
+          if (binding !== undefined && value != null) this.constants.set(binding, value);
+        });
       });
       return this.returnType(task, this.returns);
     } finally {
@@ -503,7 +556,8 @@ export class Checker {
       });
       return UNKNOWN;
     }
-    return this.checkTaskBody(binding.task, binding.scope, args);
+    const fixed = call.args.map((arg) => evaluateConstant(arg.value, (n) => this.constantOf(n)));
+    return this.checkTaskBody(binding.task, binding.scope, args, fixed);
   }
 
   /** Reports a task call used as a value when the task returns nothing (E320). */
@@ -533,24 +587,120 @@ export class Checker {
    * A statement that names no robot (say, confirm, ask, pour, weld) runs on the one connected
    * robot that supports it (DECISIONS.md D27).
    */
-  private requireSomeRobot(what: string, at: Position): void {
-    if (this.deadDepth > 0) return;
+  private requireSomeRobot(what: string, at: Position): string | null {
     const models = [...this.robots.entries()];
-    if (models.some(([, model]) => model === null)) return; // E201 already reported
+    if (models.some(([, model]) => model === null)) return null; // E201 already reported
     const able = models.filter(([, model]) => model !== null && missingProfile(model, what) === null);
-    if (able.length === 1) return;
+    const [chosen] = able;
+    if (able.length === 1 && chosen !== undefined) return chosen[0];
+    if (this.deadDepth > 0) return null;
     if (able.length > 1) {
       this.report("E403", at, { what, robots: able.map(([name]) => name).join(", ") });
-      return;
+      return null;
     }
     const [only] = models;
     if (models.length === 1 && only !== undefined && only[1] !== null) {
       const model = only[1];
       this.report("E401", at, { what, profile: missingProfile(model, what) ?? "", robot: only[0], supported: model.profiles.join(", ") });
-      return;
+      return null;
     }
     const needs = missingProfile({ name: "", frames: {}, actuators: {}, sensors: {}, profiles: [], extensions: {} }, what) ?? "";
     this.report("E404", at, { what, profile: needs });
+    return null;
+  }
+
+  // -------------------------------------------------------------------------
+  // Safety limits and forbidden zones (Guidebook §9.1, §9.3 rule 6, DECISIONS.md D29)
+  // -------------------------------------------------------------------------
+
+  /** The robot a frame, actuator, sensor or robot value belongs to. */
+  private robotOf(type: Type): { name: string; model: RobotModel } | null {
+    const name = type.kind === "Robot" || type.kind === "Part" ? type.robot : undefined;
+    const model = name === undefined ? undefined : this.robots.get(name);
+    return name === undefined || model === undefined || model === null ? null : { name, model };
+  }
+
+  /** A fixed quantity, like 3m/s or a let bound to one, or null if only known while running. */
+  private fixedQuantity(expr: Expression | null): Quantity | null {
+    if (expr === null) return null;
+    const constant = evaluateConstant(expr, (name) => this.constantOf(name));
+    return constant?.kind === "Quantity" ? constant.quantity : null;
+  }
+
+  /**
+   * A fixed speed must not be above the robot's safety limit (E502) nor above what the frame can
+   * do (E406). The safety limit is reported first, since it matters most.
+   */
+  private checkSpeedLimits(owner: Type, speedExpr: Expression | null): void {
+    const speed = this.fixedQuantity(speedExpr);
+    const robot = this.robotOf(owner);
+    if (speed === null || robot === null || speedExpr === null || UNITS[speed.unit]?.dimension !== "Speed") return;
+    const safetyLimit = robot.model.safety?.maxSpeed;
+    if (safetyLimit !== undefined && compare(speed, safetyLimit) > 0) {
+      this.report("E502", speedExpr, { speed: format(speed), limit: format(safetyLimit), robot: robot.name });
+      return;
+    }
+    if (owner.kind !== "Part") return;
+    const frameLimit = robot.model.frames[owner.part]?.maxSpeed;
+    if (frameLimit !== undefined && compare(speed, frameLimit) > 0) {
+      this.report("E406", speedExpr, { speed: format(speed), limit: format(frameLimit), frame: owner.part, robot: robot.name });
+    }
+  }
+
+  /** grip needs the actuator to have the state (open, or closed for close) and a force it can apply. */
+  private checkGrip(actuator: Type, action: "open" | "close", forceExpr: Expression | null, at: Position): void {
+    const robot = this.robotOf(actuator);
+    if (robot === null || actuator.kind !== "Part") return;
+    const model = robot.model.actuators[actuator.part];
+    if (model === undefined) return;
+    const state = action === "open" ? "open" : "closed";
+    if (!model.states.includes(state) && this.deadDepth === 0) {
+      this.report("E408", at, { actuator: actuator.part, robot: robot.name, state, states: model.states.join(", ") });
+    }
+    const force = this.fixedQuantity(forceExpr);
+    if (force !== null && forceExpr !== null && model.maxForce !== undefined && compare(force, model.maxForce) > 0) {
+      this.report("E407", forceExpr, { force: format(force), limit: format(model.maxForce), actuator: actuator.part, robot: robot.name });
+    }
+  }
+
+  /** The corners of each zone the robot's manifest forbids, with a name for messages. */
+  private forbiddenZones(model: RobotModel): { name: string; corners: readonly Corner[] }[] {
+    const zones: { name: string; corners: readonly Corner[] }[] = [];
+    for (const zone of model.safety?.forbiddenZones ?? []) {
+      if (zone.kind === "polygon") zones.push({ name: "", corners: zone.corners });
+      else {
+        const corners = this.site.zones.get(zone.name)?.corners;
+        if (corners != null) zones.push({ name: zone.name, corners });
+      }
+    }
+    return zones;
+  }
+
+  /** A fixed target must not lie in a zone the robot's manifest forbids (E501). */
+  private checkNotForbidden(owner: Type, target: Expression): void {
+    const robot = this.robotOf(owner);
+    if (robot === null) return;
+    const point = constantPoint(target, (name) => this.site.places.get(name)?.point ?? null);
+    if (point === null) return;
+    for (const zone of this.forbiddenZones(robot.model)) {
+      if (insidePolygon(point, zone.corners)) {
+        this.report("E501", target, { zone: zone.name, robot: robot.name });
+        return;
+      }
+    }
+  }
+
+  /** Every fixed point of a via route must stay out of forbidden zones too. */
+  private checkRouteNotForbidden(owner: Type, route: Expression): void {
+    const robot = this.robotOf(owner);
+    if (robot === null || route.kind !== "Member" || route.object.kind !== "Name" || route.object.name !== "route") return;
+    for (const point of this.site.route.get(route.name)?.points ?? []) {
+      const zone = this.forbiddenZones(robot.model).find((z) => insidePolygon(point, z.corners));
+      if (zone !== undefined) {
+        this.report("E501", route, { zone: zone.name, robot: robot.name });
+        return;
+      }
+    }
   }
 
   /**
@@ -669,6 +819,7 @@ export class Checker {
     if (model === undefined) this.report("E201", statement, { robot: statement.name, address });
     if (this.bind(statement.name, { kind: "Robot", robot: statement.name }, statement) !== undefined) {
       this.robots.set(statement.name, model ?? null);
+      this.robotLines.set(statement.name, statement);
     }
   }
 
@@ -697,7 +848,16 @@ export class Checker {
       this.report("E207", statement, { name: `${statement.what} ${statement.name}`, line: String(earlier.line) });
       return;
     }
-    table.set(statement.name, { type, line: statement.line });
+    const places = (name: string): Point | null => this.site.places.get(name)?.point ?? null;
+    const value = statement.value;
+    let entry: SiteEntry = { type, line: statement.line };
+    if (statement.what === "place") entry = { ...entry, point: constantPoint(value, places) };
+    if (statement.what === "zone") entry = { ...entry, corners: constantPolygon(value, places) };
+    if (statement.what === "route" && value.kind === "List") {
+      const points = value.items.map((item) => constantPoint(item, places));
+      entry = { ...entry, points: points.every((p) => p !== null) ? (points as Point[]) : null };
+    }
+    table.set(statement.name, entry);
   }
 
   /** import "FILE.uritp": loads its places, zones, routes and tasks. */

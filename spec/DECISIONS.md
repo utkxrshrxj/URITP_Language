@@ -554,6 +554,26 @@ reject a doubtful program rather than guess.
     `if ROBOT.has("vendor.feature"):`, alone or joined to other conditions
     with `and`.
 
+### D29. When limits and zones are checked
+- **Guidebook:** checks happen "before any motor turns" (§1), and a robot
+  enforces its own limits "even if a program or instruction would break
+  them" (§9.3 rule 6).
+- **Decision:**
+  - Speeds and forces that are fixed before the program runs (like
+    `speed 3m/s`, or a `let` bound to one) are compared with the manifest:
+    `safety max_speed` (E502), a frame's `max_speed` (E406) and an
+    actuator's `max_force` (E407). The safety limit is reported first.
+  - Fixed targets (`move`, `place ... on`, `land ... at`, and the points of a
+    `via` route) are checked against the zones the manifest forbids (E501).
+    Zones cover every height (D16).
+  - Values only known while running (a speed worked out from a sensor, an
+    object's position) and the path a robot plans between targets cannot be
+    checked here. The driver enforces the same limits while running, as
+    rule 6 requires (Phase 6).
+  - A forbidden zone named in a manifest but missing from the site map is
+    an error (E503): a zone the checker cannot locate cannot be kept out of.
+  - Turning speeds have no manifest limit (see "Proposed, not adopted").
+
 ---
 
 ## Proposed, not adopted

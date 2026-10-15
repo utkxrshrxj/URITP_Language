@@ -354,6 +354,18 @@ const messages: Record<string, MessageEntry> = {
     message: () => "no URITP 0.1 robot accepts native code",
     fix: () => "Use a URITP statement or a vendor extension instead.",
   },
+  E406: {
+    message: (a) => `speed ${arg(a, "speed")} is faster than frame '${arg(a, "frame")}' of '${arg(a, "robot")}' can move (max_speed ${arg(a, "limit")})`,
+    fix: (a) => `Use a speed of at most ${arg(a, "limit")}. A robot never does a different motion instead (Guidebook §9.3 rule 4).`,
+  },
+  E407: {
+    message: (a) => `force ${arg(a, "force")} is more than actuator '${arg(a, "actuator")}' of '${arg(a, "robot")}' can apply (max_force ${arg(a, "limit")})`,
+    fix: (a) => `Use a force of at most ${arg(a, "limit")}.`,
+  },
+  E408: {
+    message: (a) => `actuator '${arg(a, "actuator")}' of '${arg(a, "robot")}' has no state '${arg(a, "state")}'`,
+    fix: (a) => `Its states are: ${arg(a, "states")}. grip ... open needs the state open, and grip ... close needs closed.`,
+  },
 
   // ---- E41x: problems in a manifest (Guidebook §9.1) ----
   E410: {
@@ -407,6 +419,23 @@ const messages: Record<string, MessageEntry> = {
   E419: {
     message: () => "a forbidden zone must be zones.NAME or a polygon with fixed corners",
     fix: () => "Write it like: safety forbidden_zone zones.icu, or polygon(pose(0m, 0m, 0m), pose(1m, 0m, 0m), pose(1m, 1m, 0m)).",
+  },
+
+  // ---- E5xx: safety (Guidebook §9.1, §9.3 rule 6) ----
+  E501: {
+    message: (a) =>
+      arg(a, "zone") !== ""
+        ? `this target is inside the forbidden zone '${arg(a, "zone")}' of '${arg(a, "robot")}'`
+        : `this target is inside a forbidden zone from the manifest of '${arg(a, "robot")}'`,
+    fix: () => "Choose a target outside the zone. A program can never switch a forbidden zone off.",
+  },
+  E502: {
+    message: (a) => `speed ${arg(a, "speed")} exceeds safety limit ${arg(a, "limit")} for '${arg(a, "robot")}'`,
+    fix: (a) => `Use a speed of at most ${arg(a, "limit")}. A program can never switch safety limits off (Guidebook §9.3 rule 6).`,
+  },
+  E503: {
+    message: (a) => `the manifest of '${arg(a, "robot")}' forbids zone '${arg(a, "zone")}', but the site map does not define it`,
+    fix: (a) => `Define zone ${arg(a, "zone")} in the site map with fixed corners, so the robot can be kept out of it.`,
   },
 
   // ---- W6xx: portability warnings (Guidebook §7) ----

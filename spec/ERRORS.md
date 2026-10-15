@@ -106,6 +106,9 @@ searchable (§8). The English wording lives in
 | E403 | a statement that names no robot, which more than one robot could run (D18, D27) | `say "hi"` with two robots that can speak |
 | E404 | a statement that names no robot, which no connected robot can run (D27) | `say "hi"` with only robots that cannot speak |
 | E405 | native code, which no URITP 0.1 robot accepts (D20) | `native("urscript", "...")` |
+| E406 | a fixed speed faster than the frame can move (its `max_speed`) | `speed 3m/s` on a frame with `max_speed 1m/s` |
+| E407 | a fixed force more than the actuator can apply (its `max_force`) | `force 200N` on a gripper with `max_force 140N` |
+| E408 | `grip` asking for a state the actuator does not have | `grip rover.tray close` on a tray with states `[empty, loaded]` |
 
 ## E41x: problems in a manifest (Phase 4)
 
@@ -125,6 +128,14 @@ capability range. A manifest with any error is not used at all.
 | E418 | an extension name that breaks the naming rule | `extension ExampleCorp.Weld(...)`, `extension navigation.boost()` |
 | E419 | a forbidden zone that is not `zones.NAME` or a fixed polygon | `safety forbidden_zone cup` |
 
+## E5xx: safety (Phase 4)
+
+| Code | Meaning | Example that triggers it |
+|---|---|---|
+| E501 | a fixed target inside a zone the robot's manifest forbids | `move rover.base to places.icu_bed` |
+| E502 | a fixed speed above the robot's safety limit (§8) | `speed 3m/s` with `safety max_speed 1.5m/s` |
+| E503 | a forbidden zone named in a manifest that the site map does not define | `safety forbidden_zone zones.icu` with no zone `icu` |
+
 ## W6xx: portability warnings (Phase 4)
 
 Warnings do not stop a program, but they are always shown.
@@ -141,5 +152,4 @@ built in later phases, along with the other codes of their stage.
 
 | Code | Meaning | Phase |
 |---|---|---|
-| E502 | a speed is above the robot's safety limit | 4 |
 | R703 | a motion failed while running | 5 |
