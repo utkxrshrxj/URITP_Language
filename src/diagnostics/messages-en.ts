@@ -332,6 +332,60 @@ const messages: Record<string, MessageEntry> = {
     message: (a) => `task '${arg(a, "task")}' does not return a value`,
     fix: () => "Add 'return VALUE' to the task, or call it on its own line.",
   },
+
+  // ---- E41x: problems in a manifest (Guidebook §9.1) ----
+  E410: {
+    message: (a) =>
+      arg(a, "version") === ""
+        ? "the manifest does not say which URITP version it follows"
+        : `the manifest is for URITP ${arg(a, "version")}, but this compiler understands URITP 0.1`,
+    fix: () => "Add the line: uritp 0.1",
+  },
+  E411: {
+    message: () => "the manifest must list its profiles, including core",
+    fix: () => "Add a line like: profiles [core, navigation]. Every robot supports core (Guidebook §7).",
+  },
+  E412: {
+    message: (a) => `'${arg(a, "profile")}' is not a URITP profile`,
+    fix: (a) =>
+      arg(a, "suggestion") !== ""
+        ? `Did you mean '${arg(a, "suggestion")}'?`
+        : "The profiles are core, navigation, manipulation, flight, legged, speech, vision and tooling. Vendor features go in extensions.",
+  },
+  E413: {
+    message: (a) => `'${arg(a, "type")}' is not a frame type`,
+    fix: (a) =>
+      arg(a, "suggestion") !== ""
+        ? `Did you mean '${arg(a, "suggestion")}'?`
+        : "A frame type is pose2d (on a plane), pose3d (position in space) or pose6d (position and orientation).",
+  },
+  E414: {
+    message: (a) => `${arg(a, "what")} must be a ${arg(a, "expected")}, but this is a ${arg(a, "got")}`,
+    fix: () => "Use a unit of the right kind: reach in m, max_speed in m/s, payload in kg, max_force in N.",
+  },
+  E415: {
+    message: (a) => `${arg(a, "what")} is listed more than once`,
+    fix: () => "Keep only one of them.",
+  },
+  E416: {
+    message: (a) => `'${arg(a, "name")}' is not a dimension`,
+    fix: (a) =>
+      arg(a, "suggestion") !== ""
+        ? `Did you mean '${arg(a, "suggestion")}'?`
+        : "Use one of: Length, Angle, Time, Speed, AngularSpeed, Mass, Force, Current, Volume, Temperature.",
+  },
+  E417: {
+    message: (a) => `'${arg(a, "type")}' is not a type that '${arg(a, "name")}' can have`,
+    fix: () => "Use a URITP type such as Number, Text, Pose, Place, Route, Object or Quantity<Length>.",
+  },
+  E418: {
+    message: (a) => `the extension name '${arg(a, "name")}' is not allowed`,
+    fix: () => "Name extensions vendor.feature in lower case, with a vendor name that is not a URITP word (Guidebook §9.3 rule 8).",
+  },
+  E419: {
+    message: () => "a forbidden zone must be zones.NAME or a polygon with fixed corners",
+    fix: () => "Write it like: safety forbidden_zone zones.icu, or polygon(pose(0m, 0m, 0m), pose(1m, 0m, 0m), pose(1m, 1m, 0m)).",
+  },
 };
 
 export const ENGLISH: MessageTable = { fixLabel: "Fix", messages };

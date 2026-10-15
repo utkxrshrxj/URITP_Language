@@ -97,6 +97,24 @@ searchable (§8). The English wording lives in
 | E319 | a polygon with fewer than 3 corners | `polygon(pose(...), pose(...))` |
 | E320 | a task call used as a value when the task returns nothing | `let x = wave()` |
 
+## E41x: problems in a manifest (Phase 4)
+
+A manifest describes what a robot can do (§9.1), so its problems use the
+capability range. A manifest with any error is not used at all.
+
+| Code | Meaning | Example that triggers it |
+|---|---|---|
+| E410 | no `uritp` line, or a version other than 0.1 | `uritp 0.2` |
+| E411 | no `profiles` line, or one without `core` | `profiles [navigation]` |
+| E412 | a profile that does not exist | `profiles [core, navigaton]` |
+| E413 | a frame type other than pose2d, pose3d or pose6d | `frame base: pose4d` |
+| E414 | a value with the wrong kind of unit | `max_speed 1.5m` |
+| E415 | the same entry listed twice | two `frame base:` lines |
+| E416 | a sensor dimension that does not exist | `dimension Lenght` |
+| E417 | an extension parameter type that does not exist | `seam: Path` |
+| E418 | an extension name that breaks the naming rule | `extension ExampleCorp.Weld(...)`, `extension navigation.boost()` |
+| E419 | a forbidden zone that is not `zones.NAME` or a fixed polygon | `safety forbidden_zone cup` |
+
 ## Codes fixed by the Guidebook
 
 These keep the meaning the Guidebook gives them (DECISIONS.md D21). They are
