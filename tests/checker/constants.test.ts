@@ -1,4 +1,5 @@
 // Tests working out fixed values before the program runs, such as 10cm + 5mm = 10.5cm.
+// Values that depend on robots or sensors must be left for later.
 import { describe, expect, it } from "vitest";
 import { evaluateConstant } from "../../src/checker/constants.js";
 import { parseExpressionSource } from "../../src/parser/parser.js";

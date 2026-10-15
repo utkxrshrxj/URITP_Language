@@ -1,4 +1,5 @@
 // Tests which value types fit which slots, and how types are named in error messages.
+// Covers hands that are both frames and actuators, and places used as poses.
 import { describe, expect, it } from "vitest";
 import {
   acceptName, BOOL, fits, listOf, NUMBER, OBJECT, PLACE, POSE, quantity, sameType, typeName, UNKNOWN,
