@@ -383,18 +383,21 @@ parallel_stmt  = "parallel" block ;
 (* safety: block of rules;  ACTION when COND *)
 safety_block   = "safety" ":" NEWLINE INDENT safety_rule { safety_rule } DEDENT ;
 safety_rule    = safety_action "when" expression NEWLINE ;
-safety_action  = "stop" expression
-               | "return_home" expression
-               | "land" expression [ "at" expression ]
-               | "alert" TEXT ;
+safety_action  = "stop" [ expression ]
+               | "return_home" [ expression ]
+               | "land" [ expression ] [ "at" expression ]
+               | "alert" [ TEXT ] ;
 
 (* native("LANGUAGE", "CODE") *)
 native_stmt    = "native" "(" TEXT "," TEXT ")" ;
 ```
 
 - `on fail` is in section 2.1, because it is part of a block.
-- Safety rules name their robot (C9), for example
-  `return_home drone when drone.battery < 25%`.
+- A safety rule may name its robot, as in
+  `return_home drone when drone.battery < 25%` (C9), or leave it out, as in
+  `return_home when drone.battery < 25%` (D44). With no robot, `stop` stops
+  every robot, and `return_home` and `land` go to the one robot that can fly.
+  `alert` may leave out its text.
 - The text in `native(...)` must be constant (B6).
 
 ## 2.9 Where statements may appear (C6)

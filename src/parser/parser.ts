@@ -1093,10 +1093,13 @@ export class Parser {
     }
     this.advance();
     const action = start.text as SafetyRule["action"];
+    // The robot and the alert's message may be left out (DECISIONS.md D44).
+    const next = this.peek();
+    const named = !(next.kind === "keyword" && (next.text === "when" || (action === "land" && next.text === "at")));
     if (action === "alert") {
-      message = this.expectText("a message in double quotes", 'alert "TEXT" when CONDITION');
+      if (next.kind === "text") message = this.expectText("a message in double quotes", '[alert "TEXT"] when CONDITION');
     } else {
-      robot = this.parseExpression();
+      if (named) robot = this.parseExpression();
       if (action === "land" && this.acceptKeyword("at") !== undefined) place = this.parseExpression();
     }
     this.expectKeyword("when", form);

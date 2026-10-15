@@ -76,6 +76,30 @@ describe("safety rules", () => {
     expect(motions(robots["rover"]!)).toEqual(["DRIVE frame=base distance=1"]);
   });
 
+  it("stops every robot for a stop rule that names no robot (D44)", async () => {
+    const source = lines(
+      'robot rover = connect("x")',
+      'robot drone = connect("y")',
+      "safety:",
+      "    stop when rover.battery < 50%",
+      "drive rover.base forward by 1m",
+      "takeoff drone to 5m",
+    );
+    const { result, robots } = await run(source, { robots: { rover: drone(60), drone: () => ({}) } });
+    expect(result).toMatchObject({ state: "cancelled", reason: "safety rule on line 4: stop" });
+    expect(motions(robots["drone"]!)).toEqual([]);
+    expect(robots["rover"]!.stops).toBeGreaterThanOrEqual(1);
+    expect(robots["drone"]!.stops).toBeGreaterThanOrEqual(1);
+  });
+
+  it("sends the one flying robot home for a return_home rule that names no robot (D44)", async () => {
+    const source = lines('robot drone = connect("x")', "safety:", "    return_home when drone.battery < 50%", "takeoff drone to 15m", "move drone.base to places.roof_north");
+    const { result, robots } = await run(source, { robots: { drone: drone(60) }, site: SITE });
+    expect(result.reason).toBe("safety rule on line 3: return_home drone");
+    const sent = motions(robots["drone"]!);
+    expect(sent[sent.length - 1]).toBe("SKILL name=return_home");
+  });
+
   it("lands at a place for a land rule", async () => {
     const source = lines('robot drone = connect("x")', "safety:", "    land drone at places.launch_pad when drone.battery < 50%", "takeoff drone to 15m", "move drone.base to places.roof_north");
     const { robots } = await run(source, { robots: { drone: drone(60) }, site: SITE });
@@ -97,6 +121,12 @@ describe("safety rules", () => {
     });
     expect(result.state).toBe("succeeded");
     expect(alerts).toEqual(["Battery below 50%"]);
+  });
+
+  it("gives an alert with no message the rule's line (D44)", async () => {
+    const source = lines('robot rover = connect("x")', "safety:", "    alert when rover.battery < 50%", "drive rover.base forward by 1m");
+    const { alerts } = await run(source, { robots: { rover: (line) => (line === "SENSE sensor=battery" ? reading(0.4) : {}) } });
+    expect(alerts).toEqual(["safety rule on line 3"]);
   });
 
   it("stops the program when a rule cannot be checked (D37)", async () => {

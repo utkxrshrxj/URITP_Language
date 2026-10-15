@@ -308,11 +308,11 @@ export interface ParallelStatement extends Position {
 // Errors and safety
 export interface SafetyRule extends Position {
   readonly action: "stop" | "return_home" | "land" | "alert";
-  /** The robot for stop, return_home and land; null for alert. */
+  /** The robot for stop, return_home and land; null for alert, or when no robot is named (D44). */
   readonly robot: Expression | null;
-  /** The place in land ROBOT at PLACE; null otherwise. */
+  /** The place in land [ROBOT] at PLACE; null otherwise. */
   readonly at: Expression | null;
-  /** The message for alert; null otherwise. */
+  /** The message for alert; null otherwise, or when the alert has no message (D44). */
   readonly message: TextLiteral | null;
   readonly condition: Expression;
 }

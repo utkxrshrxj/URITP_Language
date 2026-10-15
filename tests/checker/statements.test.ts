@@ -235,6 +235,21 @@ describe("safety rules", () => {
     expect(run(source)).toEqual([]);
   });
 
+  it("accepts rules with no robot named, choosing the one robot that can do it (D44)", () => {
+    const source = lines(
+      "safety:",
+      "    return_home when drone.battery < 25%",
+      "    land at places.dock when drone.battery < 10%",
+      "    stop when rover.battery < 5%",
+      "    alert when drone.battery < 30%",
+    );
+    expect(run(source)).toEqual([]);
+  });
+
+  it("needs a robot that can return home when none is named (D44)", () => {
+    expect(codes(lines('robot rover = connect("x")', "safety:", "    return_home when rover.battery < 25%"), OPTIONS)).toEqual(["E401"]);
+  });
+
   it("checks the condition and the robot", () => {
     expect(run("safety:", "    stop drone when drone.battery < 25")).toEqual(["E305"]);
     expect(run("safety:", "    stop drone.base when true")).toEqual(["E306"]);

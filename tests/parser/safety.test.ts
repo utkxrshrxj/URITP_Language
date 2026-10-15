@@ -29,6 +29,26 @@ describe("safety", () => {
     expect(safety.rules[3]?.message?.parts).toEqual([{ kind: "literal", text: "Battery low" }]);
   });
 
+  it("reads rules with no robot and an alert with no message (D44)", () => {
+    const source = lines(
+      "safety:",
+      "    return_home when drone.battery < 25%",
+      "    land at places.launch_pad when drone.battery < 10%",
+      "    land when drone.battery < 5%",
+      '    stop when drone.state == "error"',
+      "    alert when drone.battery < 30%",
+    );
+    const safety = parseClean(source).statements[0];
+    if (safety?.kind !== "Safety") throw new Error("not safety");
+    expect(safety.rules.map((r) => [r.action, r.robot, r.at && show(r.at), r.message, show(r.condition)])).toEqual([
+      ["return_home", null, null, null, "(< drone.battery 25%)"],
+      ["land", null, "places.launch_pad", null, "(< drone.battery 10%)"],
+      ["land", null, null, null, "(< drone.battery 5%)"],
+      ["stop", null, null, null, '(== drone.state "error")'],
+      ["alert", null, null, null, "(< drone.battery 30%)"],
+    ]);
+  });
+
   it("explains the when block from example iii (DECISIONS.md A9)", () => {
     const source = lines("safety:", "    when drone.battery < 25%:", "        returnhome");
     const d = parse(source).diagnostics;

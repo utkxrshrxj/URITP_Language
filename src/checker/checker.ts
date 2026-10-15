@@ -477,6 +477,9 @@ export class Checker {
           if (rule.robot !== null) {
             const robot = this.expectValue(rule.robot, ROBOT, rule.action);
             if (rule.action === "return_home" || rule.action === "land") this.requireProfile(robot, rule.action, rule);
+          } else if (rule.action === "return_home" || rule.action === "land") {
+            // No robot named: the one connected robot that can do it (D44, as D27).
+            this.requireSomeRobot(rule.action, rule);
           }
           this.optional(rule.at, PLACE_ONLY, "at");
           if (rule.message !== null) this.checkText(rule.message);

@@ -544,12 +544,17 @@ export class Runner {
   private async fire({ rule, ctx }: WatchedRule): Promise<void> {
     const evaluator = this.evaluator(ctx);
     if (rule.action === "alert") {
-      const text = rule.message === null ? "" : show(await evaluator.evaluate(rule.message));
+      const text = rule.message === null ? `safety rule on line ${rule.line}` : show(await evaluator.evaluate(rule.message));
       this.trace.push({ kind: "alert", text });
       this.options.output?.alert(text);
       return;
     }
-    const robot = robotOf(await evaluator.evaluate(rule.robot as Expression));
+    if (rule.robot === null && rule.action === "stop") {
+      // stop with no robot named stops every robot, which ending the program does (D44).
+      await this.cancelProgram(`safety rule on line ${rule.line}: stop`);
+      return;
+    }
+    const robot = rule.robot === null ? this.robotFor(rule.action) : robotOf(await evaluator.evaluate(rule.robot));
     const at = rule.at === null ? null : await evaluator.evaluate(rule.at);
     await this.cancelProgram(`safety rule on line ${rule.line}: ${rule.action} ${robot}`);
     if (rule.action === "return_home") await this.sendAnyway(robot, codegen.skill("return_home"), rule.line);

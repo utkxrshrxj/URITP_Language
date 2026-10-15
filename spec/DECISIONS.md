@@ -270,6 +270,7 @@ reject a doubtful program rather than guess.
   `return_home ROBOT when COND`, `alert "TEXT" when COND`.
   `return_home` exists only as a safety action (it has no statement form in
   §5) and needs the `flight` profile (§7).
+- **Changed by D44:** the robot, and the alert's text, may now be left out.
 
 ### C10. `safety:` placement
 - **Decision:** `safety:` is a top-level block. Its rules are active from that
@@ -780,6 +781,23 @@ reject a doubtful program rather than guess.
   gripping and carrying things; a welding arm moves a torch along a seam and
   often has no gripper at all. `pick`, `place`, `grip` and `pour` still need
   `manipulation`.
+
+### D44. Safety rules that name no robot
+- **Guidebook:** a safety rule is "ACTION when COND" (§5), for example
+  `return_home when battery < 25%`, with no robot named.
+- **Conflict:** C9 asked every rule to name its robot. The URITP playground
+  writes rules exactly as §5 does (`stop when ...`, `alert when ...`) and
+  rejects a named robot, so no program with a `safety:` block worked on both.
+- **Decision:** the robot may be named or left out, and so may the alert's
+  text:
+  - `stop when COND` stops every robot and ends the program, as STOP does.
+  - `return_home when COND` and `land [at PLACE] when COND` go to the one
+    connected robot with the `flight` profile, as in D27. If none or several
+    can, the checker says so (E401, E403 or E404).
+  - `alert when COND` gives the alert "safety rule on line N".
+  - `stop ROBOT when COND`, `return_home ROBOT when COND`,
+    `land ROBOT [at PLACE] when COND` and `alert "TEXT" when COND` mean what
+    they did before.
 
 ---
 
