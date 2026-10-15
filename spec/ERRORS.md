@@ -88,11 +88,13 @@ searchable (§8). The English wording lives in
 | E311 | `.has()` or `.sense()` without fixed text | `rover.sense(name)` |
 | E312 | `repeat N times` with N not a whole number, 0 or more | `repeat 2.5 times:` |
 | E313 | a list that mixes kinds of value | `[1cm, 2s]` |
+| E314 | a task that returns different kinds of value | `return 5cm` in one place, `return 2s` in another |
 | E315 | a `{ }` insertion that cannot be shown as text | `"at {p}"` where `p` is a Pose |
 | E316 | a `lang` code that is not a language code | `say "hi" lang english` |
 | E317 | `to()` or `round()` without a unit as second value | `to(1.2m, banana)` |
 | E318 | `to()` or `round()` to a unit of another kind | `to(1.2m, s)` |
 | E319 | a polygon with fewer than 3 corners | `polygon(pose(...), pose(...))` |
+| E320 | a task call used as a value when the task returns nothing | `let x = wave()` |
 
 ## Codes fixed by the Guidebook
 

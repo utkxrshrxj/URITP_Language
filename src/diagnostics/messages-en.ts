@@ -197,9 +197,11 @@ const messages: Record<string, MessageEntry> = {
   E210: {
     message: (a) => `there is no task or function called '${arg(a, "name")}'`,
     fix: (a) =>
-      arg(a, "suggestion") !== ""
-        ? `Did you mean '${arg(a, "suggestion")}'?`
-        : "Define the task above the line that calls it, with task NAME(PARAMS):",
+      arg(a, "fix") !== ""
+        ? arg(a, "fix")
+        : arg(a, "suggestion") !== ""
+          ? `Did you mean '${arg(a, "suggestion")}'?`
+          : "Define the task above the line that calls it, with task NAME(PARAMS):",
   },
   E211: {
     message: (a) => `'${arg(a, "name")}' is not a property of ${arg(a, "owner")}`,
@@ -295,6 +297,10 @@ const messages: Record<string, MessageEntry> = {
     message: (a) => `a list cannot mix ${arg(a, "first")} and ${arg(a, "other")}`,
     fix: () => "Put only one kind of value in a list.",
   },
+  E314: {
+    message: (a) => `task '${arg(a, "task")}' returns ${arg(a, "first")} in one place and ${arg(a, "other")} in another`,
+    fix: () => "Return the same kind of value everywhere in the task, or no value at all.",
+  },
   E315: {
     message: (a) => `{${arg(a, "inside")}} is ${arg(a, "type")}, which cannot be shown as text`,
     fix: () => "Insert a number, a quantity, text or a name such as {checkpoint.name}.",
@@ -314,6 +320,10 @@ const messages: Record<string, MessageEntry> = {
   E319: {
     message: (a) => `a polygon needs at least 3 corners, but this one has ${arg(a, "count")}`,
     fix: () => "Give three or more poses.",
+  },
+  E320: {
+    message: (a) => `task '${arg(a, "task")}' does not return a value`,
+    fix: () => "Add 'return VALUE' to the task, or call it on its own line.",
   },
 };
 

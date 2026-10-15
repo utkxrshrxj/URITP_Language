@@ -16,6 +16,7 @@ import type {
   Program,
   RobotStatement,
   Statement,
+  TaskStatement,
   TextLiteral,
   UnaryExpression,
 } from "../parser/ast.js";
@@ -45,6 +46,7 @@ import {
   fits,
   fitsAny,
   listOf,
+  NOTHING,
   NUMBER,
   OBJECT,
   PERCENT,
@@ -158,6 +160,12 @@ export class Checker {
   private onFailDepth = 0;
   /** Every name the program has bound anywhere, with its line, to explain names used out of their block. */
   private readonly boundAnywhere = new Map<string, number>();
+  /** Tasks defined anywhere at the top level, to explain a call that comes before the definition. */
+  private readonly allTaskNames = new Set<string>();
+  /** The tasks whose bodies are being checked right now, innermost last. */
+  private readonly taskStack: string[] = [];
+  /** The value types given by return statements in the task being checked. */
+  private returns: { type: Type; at: Position }[] = [];
 
   constructor(private readonly options: CheckOptions = {}) {}
 
@@ -188,6 +196,9 @@ export class Checker {
   // -------------------------------------------------------------------------
 
   checkProgram(program: Program): void {
+    for (const statement of program.statements) {
+      if (statement.kind === "Task") this.allTaskNames.add(statement.name);
+    }
     for (const siteMap of this.options.siteMaps ?? []) this.checkOtherFile(siteMap.name, siteMap.source, "site map");
     for (const statement of program.statements) this.checkStatement(statement);
     this.checkOnFail(program.onFail);
@@ -254,8 +265,15 @@ export class Checker {
 
   protected checkStatement(statement: Statement): void {
     switch (statement.kind) {
+      case "Task":
+        this.checkTaskDefinition(statement);
+        return;
+      case "Return":
+        this.returns.push({ type: statement.value === null ? NOTHING : this.checkValue(statement.value), at: statement });
+        return;
       case "Let": {
         const type = statement.value.kind === "Ask" ? this.checkAsk(statement.value.question) : this.checkValue(statement.value);
+        if (type.kind === "Nothing") this.reportNoValue(statement.value);
         const binding = this.bind(statement.name, type, statement);
         if (binding !== undefined && statement.value.kind !== "Ask") {
           const constant = evaluateConstant(statement.value, (name) => this.constantOf(name));
@@ -407,6 +425,80 @@ export class Checker {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Tasks (DECISIONS.md D5)
+  // -------------------------------------------------------------------------
+
+  /**
+   * task NAME(PARAMS): binds the task, then checks its body once with parameters of unknown
+   * type, which catches every mistake that does not depend on what is passed in.
+   */
+  private checkTaskDefinition(task: TaskStatement): void {
+    const definedIn = this.scope.snapshot(); // the task sees only names defined above it
+    this.checkTaskBody(task, definedIn, task.params.map(() => UNKNOWN));
+    if (BUILT_IN_NAMES.includes(task.name)) {
+      this.report("E208", task, { name: task.name });
+      return;
+    }
+    const earlier = this.scope.define(task.name, { kind: "task", task, scope: definedIn, line: task.line });
+    if (earlier !== undefined) this.report("E207", task, { name: task.name, line: String(earlier.line) });
+    else if (!this.boundAnywhere.has(task.name)) this.boundAnywhere.set(task.name, task.line);
+  }
+
+  /** Checks a task body with the given parameter types and returns the type it gives back. */
+  private checkTaskBody(task: TaskStatement, definedIn: Scope, params: readonly Type[]): Type {
+    const outerScope = this.scope;
+    const outerReturns = this.returns;
+    this.scope = definedIn;
+    this.returns = [];
+    this.taskStack.push(task.name);
+    try {
+      this.checkBlock(task.body, () => {
+        task.params.forEach((param, index) => this.bind(param, params[index] ?? UNKNOWN, task, true));
+      });
+      return this.returnType(task, this.returns);
+    } finally {
+      this.taskStack.pop();
+      this.scope = outerScope;
+      this.returns = outerReturns;
+    }
+  }
+
+  /** The type a task gives back: the same everywhere, or no value at all (E314). */
+  private returnType(task: TaskStatement, returns: readonly { type: Type; at: Position }[]): Type {
+    const known = returns.filter((r) => r.type.kind !== "Unknown");
+    const first = known[0];
+    if (first === undefined) return returns.length === 0 ? NOTHING : UNKNOWN;
+    for (const other of known.slice(1)) {
+      if (!sameType(first.type, other.type)) {
+        this.report("E314", other.at, { task: task.name, first: typeName(first.type), other: typeName(other.type) });
+        return UNKNOWN;
+      }
+    }
+    return first.type;
+  }
+
+  /** A call of a task: checks the arguments, then the body with their types. */
+  private checkTaskCall(name: string, binding: Extract<Binding, { kind: "task" }>, call: CallExpression): Type {
+    this.rejectNamedArguments(call.args, name);
+    const args = call.args.map((arg) => this.checkValue(arg.value, { objectAllowed: true }));
+    if (args.length !== binding.task.params.length) {
+      this.report("E309", call, {
+        what: `task ${name}`,
+        expected: String(binding.task.params.length),
+        got: String(args.length),
+      });
+      return UNKNOWN;
+    }
+    return this.checkTaskBody(binding.task, binding.scope, args);
+  }
+
+  /** Reports a task call used as a value when the task returns nothing (E320). */
+  private reportNoValue(expr: Expression | { kind: "Ask" }): void {
+    if (expr.kind !== "Call" || expr.callee.kind !== "Name") return;
+    this.report("E320", expr, { task: expr.callee.name });
+  }
+
   private optional(expr: Expression | null, accepts: readonly Accept[], slot: string): void {
     if (expr !== null) this.expectValue(expr, accepts, slot);
   }
@@ -496,14 +588,18 @@ export class Checker {
     return TEXT;
   }
 
-  /** Binds a name in the current block, reporting E207 or E208 if that is not allowed. */
-  protected bind(name: string, type: Type, at: Position): Binding | undefined {
+  /**
+   * Binds a name in the current block, reporting E207 or E208 if that is not allowed.
+   * Task parameters are not remembered program-wide, because they are often named after the
+   * objects passed in (task grab(cup) called as grab(cup)).
+   */
+  protected bind(name: string, type: Type, at: Position, isParameter = false): Binding | undefined {
     if (BUILT_IN_NAMES.includes(name)) {
       this.report("E208", at, { name });
       return undefined;
     }
     const binding: Binding = { kind: "value", type, line: at.line };
-    if (!this.boundAnywhere.has(name)) this.boundAnywhere.set(name, at.line);
+    if (!isParameter && !this.boundAnywhere.has(name)) this.boundAnywhere.set(name, at.line);
     const earlier = this.scope.define(name, binding);
     if (earlier !== undefined) {
       this.report("E207", at, { name, line: String(earlier.line) });
@@ -531,6 +627,10 @@ export class Checker {
     const role = wanted === undefined ? undefined : (wanted.kind.toLowerCase() as PartRole);
     const type = this.checkValue(expr, role === undefined ? { objectAllowed } : { objectAllowed, role });
     if (fitsAny(type, accepts)) return type;
+    if (type.kind === "Nothing") {
+      this.reportNoValue(expr);
+      return UNKNOWN;
+    }
     if (type.kind === "Number") {
       const wanted = accepts.find((a) => a.kind === "Quantity");
       if (wanted !== undefined && wanted.kind === "Quantity") {
@@ -774,11 +874,23 @@ export class Checker {
     return UNKNOWN; // the parser only allows names and members to be called
   }
 
-  /** A call of a name that is not a built-in function: a task (checked later) or a mistake. */
+  /** A call of a name that is not a built-in function: a task, or a mistake. */
   protected checkNamedCall(name: string, call: CallExpression): Type {
-    this.checkArgumentsLoosely(call.args);
-    const candidates = [...Object.keys(FUNCTIONS), ...this.scope.visibleNames()];
-    this.report("E210", call, { name, suggestion: closestMatch(name, candidates) ?? "" });
+    const binding = this.scope.lookup(name);
+    if (binding?.kind === "task") return this.checkTaskCall(name, binding, call);
+    this.checkArgumentsLoosely(call.args, { objectAllowed: true });
+    if (binding?.kind === "value") {
+      this.report("E306", call, { slot: `'${name}(...)'`, expected: "a task", got: typeName(binding.type), fix: "Only tasks and built-in functions can be called with brackets." });
+      return UNKNOWN;
+    }
+    if (this.taskStack.includes(name)) {
+      this.report("E210", call, { name, fix: "A task cannot call itself, so a program can never loop forever through its tasks (DECISIONS.md D5)." });
+    } else if (this.allTaskNames.has(name)) {
+      this.report("E210", call, { name, fix: `Task '${name}' is defined further down. Move its definition above this line.` });
+    } else {
+      const candidates = [...Object.keys(FUNCTIONS), ...this.scope.visibleNames()];
+      this.report("E210", call, { name, suggestion: closestMatch(name, candidates) ?? "" });
+    }
     return UNKNOWN;
   }
 
