@@ -12,9 +12,9 @@ robots like an adapter:
 4. A robot driver carries out the checked instructions.
 
 > **Status:** programs are fully checked against their robots' manifests and
-> then run, with each robot receiving only §9.2 instructions in SI units
-> (Phases 2 to 5). Company drivers come next; today programs run against
-> simulated test robots only.
+> run on simulated drivers for Universal Robots, Raspberry Pi and Arduino
+> robots (Phases 2 to 6). The voice and text layer comes next. No driver has
+> been tested on real hardware.
 
 ## Quick start
 
@@ -60,6 +60,12 @@ rovers. They run in simulator mode only and have **not been tested on real
 hardware**. This project is not affiliated with, certified by or endorsed by
 any of these companies. See [docs/COMPANIES.md](docs/COMPANIES.md).
 
+| Robot | Profiles | The driver writes |
+|---|---|---|
+| Universal Robots arm | core, manipulation | URScript-style text, like `movel(p[...], a=1.2, v=0.2)` |
+| Raspberry Pi rover | core, navigation, vision | JSON command messages, like `{"service":"motors","command":"go_to",...}` |
+| Arduino rover | core, navigation | serial text lines, like `F 500 100` |
+
 ## Roadmap
 
 | Phase | What it builds | Status |
@@ -70,8 +76,8 @@ any of these companies. See [docs/COMPANIES.md](docs/COMPANIES.md).
 | 3 | Names, types and units (E2xx, E3xx) | Done |
 | 4 | Manifests, capabilities and safety (E4xx, E5xx, W6xx) | Done |
 | 5 | Code generation and runner | Done |
-| 6 | Drivers for the three companies | Next |
-| 7 | Voice and text layer | |
+| 6 | Drivers for the three companies | Done (simulator only) |
+| 7 | Voice and text layer | Next |
 | 8 | Command line, conformance tests, Hindi messages, v0.1.0 | |
 
 ## License

@@ -31,7 +31,34 @@ updated in the same commit as any change to company code.
 | Raspberry Pi | Rover or robot built on a Pi (navigation, vision) | `drivers/raspberry-pi/` | `manifests/raspberry-pi/` | Command messages for a motor and camera service | Manifest and simulated driver done |
 | Arduino | Small microcontroller rover (core and navigation only) | `drivers/arduino/` | `manifests/arduino/` | Simple serial text protocol | Manifest and simulated driver done |
 
-Each company's section below lists its files, its manifest, how its commits
+## What every driver shares
+
+The parts that are the same for every robot live in `drivers/shared/`, which
+never names a company (spec/DECISIONS.md D38, D39):
+
+- `driver.ts`: the shape of a driver: it runs one instruction at a time as a
+  task, says how quickly it stops, and records each line it would send.
+- `checks.ts`: what a driver refuses before doing anything, whatever the
+  program checker said: missing profiles or parts, speeds and forces over
+  the limits, targets out of reach or in a forbidden zone, and anything it
+  cannot do exactly.
+- `simulator.ts` and `paths.ts`: the simulated world that carries out each
+  instruction exactly, planning straight lines only.
+- `base-driver.ts`: reports `accepted`, `running`, then one final state, and
+  obeys STOP from any state.
+
+A company driver only adds how instructions are written in its robot's own
+language, and its own stopping time and repeatability. The test
+`tests/company-files.test.ts` checks, without naming a company, that:
+- every company file starts with a `Company:` line;
+- every driver README says "not tested on real hardware" and "simulator
+  mode only";
+- every company has both a driver and a manifest;
+- shared driver code names no company.
+
+## The companies one by one
+
+Each section below lists its files, its manifest and driver, how its commits
 are worded, and what is real versus simulated.
 
 ## Universal Robots
