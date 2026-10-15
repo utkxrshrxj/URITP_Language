@@ -28,7 +28,7 @@ updated in the same commit as any change to company code.
 | Company | Robot type | Driver folder | Manifest folder | Driver speaks | Status |
 |---|---|---|---|---|---|
 | Universal Robots | Industrial arm (manipulation) | `drivers/universal-robots/` | `manifests/universal-robots/` | URScript-style text | Manifest and simulated driver done |
-| Raspberry Pi | Rover or robot built on a Pi (navigation, vision) | `drivers/raspberry-pi/` | `manifests/raspberry-pi/` | Command messages for a motor and camera service | Manifest done; driver in Phase 6 |
+| Raspberry Pi | Rover or robot built on a Pi (navigation, vision) | `drivers/raspberry-pi/` | `manifests/raspberry-pi/` | Command messages for a motor and camera service | Manifest and simulated driver done |
 | Arduino | Small microcontroller rover (core and navigation only) | `drivers/arduino/` | `manifests/arduino/` | Simple serial text protocol | Manifest done; driver in Phase 6 |
 
 Each company's section below lists its files, its manifest, how its commits
@@ -64,19 +64,29 @@ are worded, and what is real versus simulated.
 
 ## Raspberry Pi
 
-- **Folders:** `manifests/raspberry-pi/` (driver in `drivers/raspberry-pi/` from Phase 6).
+- **Folders:** `manifests/raspberry-pi/` and `drivers/raspberry-pi/`.
 - **Files:**
-  - `pi-rover.uritp`: the rover's manifest.
-  - `README.md`: what each value means and where it comes from.
-  - `manifest.test.ts`: checks the manifest and that programs are accepted or rejected against it.
+  - `manifests/raspberry-pi/pi-rover.uritp`: the rover's manifest.
+  - `manifests/raspberry-pi/README.md`: what each value means and where it comes from.
+  - `manifests/raspberry-pi/manifest.test.ts`: checks the manifest and that programs are accepted or rejected against it.
+  - `drivers/raspberry-pi/pi-driver.ts`: the simulated driver and its JSON command messages.
+  - `drivers/raspberry-pi/README.md`: what each instruction becomes, and what it refuses.
+  - `drivers/raspberry-pi/pi-driver.test.ts`: the driver's tests.
+- **Driver:** each instruction becomes JSON command messages for `motors`,
+  `camera`, `sensors` and `system` services on the Pi, such as
+  `{"service":"motors","command":"go_to",...}`. STOP sends
+  `{"service":"motors","command":"stop"}`. Stopping time 0.3 s, repeatability 1 cm.
 - **Manifest:** one `base` frame (pose2d, max_speed 0.5m/s, payload 1kg), a
   `camera` sensor, a `distance_front` sensor (Length), profiles
   `[core, navigation, vision]`, and `safety max_speed 0.3m/s`.
 - **Commits are worded** with the company name in the sentence, for example
   "Added a reference rover manifest for Raspberry Pi".
-- **Real versus simulated:** everything is simulated. A Pi rover is built
-  from parts its maker chooses, so the values are illustrative and marked
-  "replace with datasheet values".
+- **Real versus simulated:** everything is simulated, and nothing has been
+  tested on real hardware. The driver records the messages it would send,
+  but sends nothing; the services they are addressed to are a suggested
+  design, not existing software. A Pi rover is built from parts its maker
+  chooses, so the values are illustrative and marked "replace with
+  datasheet values".
 
 ## Arduino
 
