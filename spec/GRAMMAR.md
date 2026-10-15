@@ -198,3 +198,287 @@ The lexer produces these tokens:
 - `NEWLINE`, `INDENT`, `DEDENT`, `EOF`
 
 Every token remembers its line and column so error messages can point at it.
+
+---
+
+# Part 2: Syntax grammar for programs
+
+## 2.1 Programs and blocks
+
+```ebnf
+program        = { top_statement } [ on_fail ] EOF ;
+
+top_statement  = robot_stmt | task_def | import_stmt | define_stmt
+               | safety_block | statement ;
+
+block          = ":" NEWLINE INDENT statement { statement } [ on_fail ] DEDENT ;
+
+on_fail        = "on" "fail" block ;
+```
+
+- A block needs at least one statement.
+- `on fail:` is optional and must be the last item in its block (C6). It
+  lines up with the statements of the block it protects (A8).
+- Inside a task or a loop, `statement` also allows `return` and `break`; the
+  placement rules are in section 2.9.
+
+## 2.2 Statements
+
+```ebnf
+statement      = simple_stmt NEWLINE | compound_stmt ;
+
+simple_stmt    = let_stmt | return_stmt | call_stmt
+               | move_stmt | drive_stmt | turn_stmt | takeoff_stmt
+               | land_stmt | stop_stmt
+               | grip_stmt | pick_stmt | place_stmt | pour_stmt
+               | weld_stmt | spray_stmt
+               | capture_stmt | log_stmt | alert_stmt
+               | say_stmt | confirm_stmt
+               | break_stmt | wait_stmt | native_stmt ;
+
+compound_stmt  = if_stmt | for_stmt | repeat_stmt | parallel_stmt ;
+```
+
+Each statement below lists the Guidebook form it implements. Upper-case
+words in quotes are §5's placeholders.
+
+## 2.3 Program structure (§5)
+
+```ebnf
+(* robot NAME = connect("ADDRESS") *)
+robot_stmt     = "robot" NAME "=" "connect" "(" TEXT ")" NEWLINE ;
+
+(* let NAME = EXPR, and  let x = ask "QUESTION" [lang CODE] *)
+let_stmt       = "let" NAME "=" ( expression | ask_expr ) ;
+ask_expr       = "ask" TEXT [ lang_clause ] ;
+lang_clause    = "lang" NAME ;
+
+(* task NAME(PARAMS): block *)
+task_def       = "task" NAME "(" [ NAME { "," NAME } ] ")" block ;
+
+(* return [EXPR] *)
+return_stmt    = "return" [ expression ] ;
+
+(* import "FILE.uritp" *)
+import_stmt    = "import" TEXT NEWLINE ;
+
+(* NAME(ARGS): runs a task, built-in function or extension *)
+call_stmt      = postfix ;       (* must end in a call (C3) *)
+```
+
+- The text in `connect` and `import` must be constant (B6).
+- `ask` is only allowed here, as the whole right-hand side of `let` (C4).
+- A call statement starts with a name, for example
+  `pick_and_place(cup, tray)` or `examplecorp.adaptive_weld(route.seam, current=180A)`.
+  If the line does not end in a call, the parser reports that only calls can
+  stand alone.
+
+## 2.4 Motion (§5)
+
+```ebnf
+(* move FRAME to TARGET [speed Q] [tolerance Q] [via ROUTE]
+       + optional avoid ZONE line *)
+move_stmt      = "move" expression "to" expression { move_option } ;
+move_option    = "speed" expression
+               | "tolerance" expression
+               | "via" expression
+               | "avoid" expression ;
+
+(* drive FRAME forward/backward [by Q] [speed Q] *)
+drive_stmt     = "drive" expression ( "forward" | "backward" ) { drive_option } ;
+drive_option   = "by" expression | "speed" expression ;
+
+(* turn FRAME by ANGLE [speed Q] *)
+turn_stmt      = "turn" expression "by" expression [ "speed" expression ] ;
+
+(* takeoff ROBOT to HEIGHT *)
+takeoff_stmt   = "takeoff" expression "to" expression ;
+
+(* land ROBOT [at PLACE] *)
+land_stmt      = "land" expression [ "at" expression ] ;
+
+(* stop ROBOT *)
+stop_stmt      = "stop" expression ;
+```
+
+- Optional clauses may come in any order. Each may appear once, except
+  `avoid`, which may repeat (C2).
+- `avoid` may sit on the same line or on a continuation line (B5).
+
+## 2.5 Manipulation (§5)
+
+```ebnf
+(* grip ACTUATOR open/close [force Q] *)
+grip_stmt      = "grip" expression ( "open" | "close" ) [ "force" expression ] ;
+
+(* pick OBJECT using ROBOT [onto FRAME] *)
+pick_stmt      = "pick" expression "using" expression [ "onto" expression ] ;
+
+(* place OBJECT on TARGET using FRAME *)
+place_stmt     = "place" expression "on" expression "using" expression ;
+
+(* pour from OBJECT into OBJECT until CONDITION *)
+pour_stmt      = "pour" "from" expression "into" expression "until" expression ;
+
+(* weld along PATH speed Q current Q *)
+weld_stmt      = "weld" "along" expression "speed" expression "current" expression ;
+
+(* spray ACTUATOR on TARGET amount Q *)
+spray_stmt     = "spray" expression "on" expression "amount" expression ;
+```
+
+## 2.6 Sensing and data (§5)
+
+```ebnf
+(* capture SENSOR save as "FILE" *)
+capture_stmt   = "capture" expression "save" "as" TEXT ;
+
+(* log EXPR, EXPR, ... *)
+log_stmt       = "log" expression { "," expression } ;
+
+(* alert "TEXT" *)
+alert_stmt     = "alert" TEXT ;
+```
+
+`ROBOT.sense("SENSOR")` is listed under sensing in §5 but returns a value,
+so it is an expression (section 2.10).
+
+## 2.7 Talking to people (§5)
+
+```ebnf
+(* say "TEXT" [lang CODE] *)
+say_stmt       = "say" TEXT [ lang_clause ] ;
+
+(* confirm "QUESTION" [lang CODE] *)
+confirm_stmt   = "confirm" TEXT [ lang_clause ] ;
+```
+
+`ask` is in section 2.3, since it only appears inside `let`.
+
+## 2.8 Control flow, errors and safety (§5)
+
+```ebnf
+(* if COND: block, then optional elif COND: and else: *)
+if_stmt        = "if" expression block
+                 { "elif" expression block }
+                 [ "else" block ] ;
+
+(* for NAME in LIST: block *)
+for_stmt       = "for" NAME "in" expression block ;
+
+(* repeat N times: / repeat every Q: / repeat forever: *)
+repeat_stmt    = "repeat" ( expression "times" | "every" expression | "forever" ) block ;
+
+(* break *)
+break_stmt     = "break" ;
+
+(* wait Q / wait until COND [timeout Q] *)
+wait_stmt      = "wait" ( "until" expression [ "timeout" expression ] | expression ) ;
+
+(* parallel: block *)
+parallel_stmt  = "parallel" block ;
+
+(* safety: block of rules;  ACTION when COND *)
+safety_block   = "safety" ":" NEWLINE INDENT safety_rule { safety_rule } DEDENT ;
+safety_rule    = safety_action "when" expression NEWLINE ;
+safety_action  = "stop" expression
+               | "return_home" expression
+               | "land" expression [ "at" expression ]
+               | "alert" TEXT ;
+
+(* native("LANGUAGE", "CODE") *)
+native_stmt    = "native" "(" TEXT "," TEXT ")" ;
+```
+
+- `on fail` is in section 2.1, because it is part of a block.
+- Safety rules name their robot (C9), for example
+  `return_home drone when drone.battery < 25%`.
+- The text in `native(...)` must be constant (B6).
+
+## 2.9 Where statements may appear (C6)
+
+| Statement | Allowed in |
+|---|---|
+| `robot`, `task`, `import`, `define`, `safety:` | top level only |
+| `return` | inside a task only |
+| `break` | inside a `for` or `repeat` loop only (not crossing into a task) |
+| `on fail:` | as the last item of any block, including the top level |
+| everything else | anywhere a statement is allowed |
+
+These rules are checked by the parser after it reads a statement, so the
+error can say *why* the statement is in the wrong place.
+
+## 2.10 Expressions
+
+From loosest to tightest binding:
+
+| Level | Operators | Example |
+|---|---|---|
+| 1 | `or` | `a or b` |
+| 2 | `and` | `a and b` |
+| 3 | `not` | `not rover.tray.loaded` |
+| 4 | `==  !=  <  <=  >  >=` (no chaining) | `distance < 20cm` |
+| 5 | `+  -` | `10cm + 5mm` |
+| 6 | unary `-` | `-5cm` |
+| 7 | `.name`, `(...)` call | `rover.sense("thermal").max` |
+
+```ebnf
+expression     = or_expr ;
+or_expr        = and_expr { "or" and_expr } ;
+and_expr       = not_expr { "and" not_expr } ;
+not_expr       = "not" not_expr | comparison ;
+comparison     = additive [ compare_op additive ] ;
+compare_op     = "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+additive       = unary { ( "+" | "-" ) unary } ;
+unary          = "-" unary | postfix ;
+postfix        = primary { "." NAME | "(" [ arguments ] ")" } ;
+primary        = NUMBER | QUANTITY | PERCENT | TEXT
+               | "true" | "false"
+               | NAME
+               | list
+               | "(" expression ")"
+               | "to" "(" arguments ")" ;      (* the built-in to(q, unit) (B7) *)
+list           = "[" [ expression { "," expression } ] "]" ;
+arguments      = argument { "," argument } ;
+argument       = expression
+               | label "=" expression ;        (* named argument *)
+label          = NAME | keyword ;              (* e.g. current=180A (B7) *)
+```
+
+- Named arguments come after positional ones (C7).
+- Only a name or a dotted name can be called: `pose(...)`,
+  `obj.above(10cm)`, `rover.sense("x")`.
+- An expression ends at the first token that cannot continue it. That is
+  why `move arm.tool to cup.above(10cm) speed 0.2m/s` needs no punctuation:
+  the target expression stops at the keyword `speed`.
+
+## 2.11 A worked example
+
+This program (example i, cleaned up as in A8):
+
+```
+robot arm = connect("sim:panda")
+task pick_and_place(obj, dest):
+    move arm.tool to obj.above(10cm)
+    grip arm.gripper close
+    move arm.tool to dest.above(10cm) speed 0.2m/s
+    grip arm.gripper open
+    on fail:
+        say "I couldn't complete that"
+pick_and_place(cup, tray)
+```
+
+is read as:
+
+```
+program
+├── robot_stmt      arm = connect("sim:panda")
+├── task_def        pick_and_place(obj, dest)
+│   ├── move_stmt   arm.tool -> obj.above(10cm)
+│   ├── grip_stmt   arm.gripper close
+│   ├── move_stmt   arm.tool -> dest.above(10cm), speed 0.2m/s
+│   ├── grip_stmt   arm.gripper open
+│   └── on_fail
+│       └── say_stmt "I couldn't complete that"
+└── call_stmt       pick_and_place(cup, tray)
+```
