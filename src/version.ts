@@ -2,3 +2,6 @@
 // Other parts of the project read these so every output says which version made it.
 
 export const COMPILER_VERSION = "0.0.0";
+
+// The URITP language version from the Guidebook. Manifests must say "uritp 0.1".
+export const URITP_VERSION = "0.1";
