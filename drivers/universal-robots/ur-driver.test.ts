@@ -1,8 +1,10 @@
 // Company: Universal Robots
-// Tests the simulated Universal Robots driver: URScript-style lines, refusals, STOP, and a whole
-// program run from its manifest.
+// Tests the simulated Universal Robots driver: URScript-style lines, refusals, STOP, a whole
+// program run from its manifest, and the ready-to-run arm program run through the command line.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { parseArgs } from "../../src/cli/args.js";
+import { runCli } from "../../src/cli/cli.js";
 import { checkManifest } from "../../src/checker/manifest.js";
 import { instruction, num, word } from "../../src/codegen/instruction.js";
 import { realClock } from "../../src/runtime/clock.js";
@@ -104,5 +106,28 @@ describe("Universal Robots driver", () => {
 
   it("is created through its folder's entry point, as tools find it", () => {
     expect(createDriver({ model })).toBeInstanceOf(UniversalRobotsDriver);
+  });
+});
+
+describe("the command line", () => {
+  it("runs examples/try-arm/pick_and_place.uritp on this driver", async () => {
+    const printed: string[] = [];
+    const code = await runCli(parseArgs(["run", "examples/try-arm/pick_and_place.uritp", "--robot", "manifests/universal-robots/ur-arm.uritp", "--protocol"]), {
+      print: (text) => printed.push(text),
+      readFile: (path) => {
+        try {
+          return readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
+        } catch {
+          return null;
+        }
+      },
+      loadDriver: async (folder) => (folder === "universal-robots" ? createDriver : null),
+      clock: (speed) => realClock({ speed: speed * 1000 }),
+    });
+    const output = printed.join("\n");
+    expect(code).toBe(0);
+    expect(output).toContain("The program ended: succeeded.");
+    expect(output).toContain("  movel(p[0.4, 0.1, 0.15, 3.141593, 0.0, 0.0], a=1.2, v=0.2)");
+    expect(output).toContain("  gripper_close(force=40.0)");
   });
 });

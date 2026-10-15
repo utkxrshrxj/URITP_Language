@@ -72,7 +72,7 @@ are worded, and what is real versus simulated.
   - `drivers/universal-robots/urscript.ts`: URScript poses (rotation vectors) and numbers.
   - `drivers/universal-robots/README.md`: what each instruction becomes, and what it refuses.
   - `drivers/universal-robots/index.ts`: the entry point the command line and conformance tests use to create the driver.
-  - `drivers/universal-robots/ur-driver.test.ts`: the driver's tests.
+  - `drivers/universal-robots/ur-driver.test.ts`: the driver's tests, including running `examples/try-arm/pick_and_place.uritp` through the command line.
 - **Driver:** moves become `movel(p[...], a=1.2, v=...)`, grips become
   `gripper_close(...)` and `gripper_open()`, and STOP becomes `stopl(3.0)`.
   Stopping time 0.5 s, repeatability 0.03 mm.
