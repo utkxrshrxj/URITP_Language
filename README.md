@@ -11,7 +11,8 @@ robots like an adapter:
    explanation and a suggested fix.
 4. A robot driver carries out the checked instructions.
 
-> **Status:** the language is defined (Phase 1). The compiler is not built yet.
+> **Status:** the lexer and parser are built (Phase 2). Programs are checked for
+> correct syntax; name, type, unit and safety checks come next.
 
 ## Quick start
 
@@ -33,6 +34,8 @@ npm test
   operators and what each statement expects.
 - [spec/DECISIONS.md](spec/DECISIONS.md): every place where the examples or
   the Guidebook needed a decision, and ideas that were not adopted.
+- [spec/ERRORS.md](spec/ERRORS.md): every error code and what triggers it.
+- [examples/](examples/): the six example programs, cleaned up so they parse.
 
 ## Project layout
 
@@ -40,7 +43,7 @@ npm test
 |---|---|
 | `spec-source/` | The original project documents. The URITP Guidebook is the source of truth. |
 | `spec/` | The formal grammar, the types and units table, and design decisions. |
-| `src/` | The compiler: `lexer`, `parser`, `checker`, `stdlib`, `codegen`, `runtime`, `nl` (voice and text layer), `cli`. |
+| `src/` | The compiler: `lexer`, `parser`, `diagnostics` (error messages), `checker`, `stdlib`, `codegen`, `runtime`, `nl` (voice and text layer), `cli`. |
 | `drivers/` | `shared/` driver interface, plus one folder per company. |
 | `manifests/` | Robot manifests (capabilities and safety limits), one folder per company. |
 | `examples/` | Example URITP programs. |
@@ -61,8 +64,8 @@ any of these companies. See [docs/COMPANIES.md](docs/COMPANIES.md).
 |---|---|---|
 | 0 | Repo, TypeScript, Vitest, docs folder, source documents | Done |
 | 1 | Language definition: grammar, types and units, decisions | Done |
-| 2 | Lexer and parser with E1xx errors | Next |
-| 3 | Names, types and units (E2xx, E3xx) | |
+| 2 | Lexer and parser with E1xx errors | Done |
+| 3 | Names, types and units (E2xx, E3xx) | Next |
 | 4 | Manifests, capabilities and safety (E4xx, E5xx, W6xx) | |
 | 5 | Code generation and runner | |
 | 6 | Drivers for the three companies | |
