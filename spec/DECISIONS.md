@@ -379,6 +379,9 @@ reject a doubtful program rather than guess.
   - A percent literal must be from `0%` to `100%`.
   - Percent can be added to, subtracted from and compared with Percent only.
     It never mixes with Number (§4).
+  - A percent worked out while the program runs (for example
+    `robot.battery - 50%`) that falls outside 0% to 100% is a run-time error
+    (R7xx).
 
 ### D13. How results of unit arithmetic are shown
 - **Guidebook:** `10cm + 5mm` is `10.5cm` (§3).
@@ -478,6 +481,14 @@ reject a doubtful program rather than guess.
     suggested fix.
   - Error messages may also give a column number. That is extra help, not a
     language change.
+
+### D22. `sense` gives a Reading, `ROBOT.NAME` gives the Sensor
+- **Conflict:** §4 gives `dog.sense("thermal")` as an example of the `Sensor`
+  type. §5 says `sense` "returns the latest Reading", and example iv reads
+  `.max` from it, which is a `Reading` property.
+- **Decision:**
+  - `ROBOT.sense("NAME")` returns a `Reading` (§5 and the example agree).
+  - The `Sensor` itself is written `ROBOT.NAME`, as in `capture drone.camera`.
 
 ---
 
