@@ -17,6 +17,8 @@ export type TaskOutput =
       readonly min?: number;
       readonly mean?: number;
     }
+  /** The result of SENSE ... analyse=OBJECT (DECISIONS.md D30). */
+  | { readonly kind: "analysis"; readonly label: string; readonly health: string }
   | { readonly kind: "answer"; readonly text: string }
   | { readonly kind: "confirmed"; readonly yes: boolean };
 

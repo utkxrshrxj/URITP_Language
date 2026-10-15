@@ -594,6 +594,32 @@ reject a doubtful program rather than guess.
     robots are connected, the one with the `vision` profile is asked; if
     that is still not exactly one, the read fails while running (R706).
 
+### D36. How each statement becomes an instruction
+- **Guidebook:** §9.2 lists the instructions and their fields, but not how
+  every statement maps onto them.
+- **Decision:**
+
+  | Statement | Instruction |
+  |---|---|
+  | `move` | `MOVE frame target speed tolerance via avoid`; places are sent as poses, zones as their corners |
+  | `drive` | `DRIVE frame distance speed`, with a negative distance for `backward`; with no distance, `direction=forward` or `backward` is sent instead |
+  | `turn` | `TURN frame angle speed` |
+  | `grip` | `ACTUATE actuator state force`, with state `open` or `closed` (D8) |
+  | `pick`, `place`, `pour`, `weld`, `spray`, `takeoff`, `land`, `return_home` | `SKILL name=...` followed by its parts as fields |
+  | `capture` | `SENSE sensor=NAME save="FILE"`: there is no CAPTURE instruction, so `save` is added to SENSE |
+  | reading a value | `SENSE sensor=...` (D30) |
+  | `say`, `confirm`, `ask` | `SAY`, `CONFIRM`, `ASK` with `text` and `lang` |
+  | vendor extension | `EXT name=vendor.feature` followed by each argument under its parameter name |
+  | `stop` | `STOP`, sent at once, whatever the robot is doing |
+
+  The only additions to §9.2 are the `save` field of SENSE and the
+  `direction` field of DRIVE. Each is the smallest change that lets the
+  statement reach the robot.
+- `pour ... until CONDITION` is checked by the robot itself, so the
+  condition is sent as text with SI numbers (`until=mug.fill>=0.8`). It may
+  use only objects' properties, fixed values and comparisons. Anything else
+  fails while running (R705).
+
 ### D35. Which task state sequences are valid
 - **Guidebook:** a robot reports `accepted`, then `running`, then exactly
   one of `succeeded`, `failed(reason)` or `cancelled` (§9.3 rule 3). It also
