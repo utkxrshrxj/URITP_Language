@@ -1,11 +1,7 @@
 {
-  // Type-checks the drivers together with the compiler core. Drivers must stay free of
-  // Node-only code too, so a browser demo can drive the simulated robots later.
+  // Type-checks the drivers and the conformance set together with the compiler core. They must
+  // stay free of Node-only code too, so a browser demo can drive the simulated robots.
   "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "rootDir": ".",
-    "noEmit": true
-  },
-  "include": ["src", "drivers"],
-  "exclude": ["**/*.test.ts"]
+  "include": ["src", "drivers", "conformance"],
+  "exclude": ["src/cli", "**/*.test.ts"]
 }

@@ -1,0 +1,11 @@
+{
+  // Builds everything into dist/: the core, the drivers, the conformance set and the command line.
+  // Only this build has Node's types, which the command line needs to read files.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noEmit": false
+  },
+  "include": ["src", "drivers", "conformance"],
+  "exclude": ["**/*.test.ts"]
+}

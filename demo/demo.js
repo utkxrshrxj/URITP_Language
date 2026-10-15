@@ -1,10 +1,10 @@
 // The browser demo: speak or type a request, see the URITP program the offline translator writes,
 // the checker's verdict, and the instructions a simulated rover receives. No API key is used here.
-import { handleRequest } from "../dist/nl/handle-request.js";
-import { RuleBasedTranslator } from "../dist/nl/rule-based.js";
-import { formatInstruction } from "../dist/codegen/instruction.js";
-import { CancelSignal, realClock } from "../dist/runtime/clock.js";
-import { formatDiagnostic } from "../dist/diagnostics/diagnostic.js";
+import { handleRequest } from "../dist/src/nl/handle-request.js";
+import { RuleBasedTranslator } from "../dist/src/nl/rule-based.js";
+import { formatInstruction } from "../dist/src/codegen/instruction.js";
+import { CancelSignal, realClock } from "../dist/src/runtime/clock.js";
+import { formatDiagnostic } from "../dist/src/diagnostics/diagnostic.js";
 
 const MANIFEST = [
   'manifest "Demo rover (simulated)":',

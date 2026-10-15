@@ -1,13 +1,17 @@
 {
-  // The compiler core must run in a browser later, so only standard
-  // JavaScript is available here: no Node types ("types": []) and no DOM.
+  // The compiler core must run in a browser, so it asks for no Node types
+  // ("types": []) and no DOM. Node's types can still arrive through other
+  // packages, so tests/browser-safety.test.ts is the real guard: it fails if
+  // the core or the drivers use anything that only exists in Node. The
+  // command line (src/cli) is the one part that may use Node; it is left out
+  // here and checked by tsconfig.build.json instead.
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],
     "types": [],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "dist",
     "declaration": true,
     "sourceMap": true,
@@ -17,7 +21,9 @@
     "noFallthroughCasesInSwitch": true,
     "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noEmit": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/cli"]
 }

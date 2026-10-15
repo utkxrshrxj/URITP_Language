@@ -9,8 +9,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.drivers.json",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.drivers.json && tsc -p tsconfig.build.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "demo": "npm run build && node scripts/serve-demo.mjs"
@@ -20,6 +20,7 @@
     "url": "git+https://github.com/utkxrshrxj/URITP_Language.git"
   },
   "devDependencies": {
+    "@types/node": "^22.20.5",
     "typescript": "^7.0.2",
     "vitest": "^5.0.4"
   },
