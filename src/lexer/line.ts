@@ -1,11 +1,11 @@
-// Cuts one line of a program into tokens: names, keywords, numbers, units, percents and symbols.
+// Cuts one line of a program into tokens: names, keywords, numbers, units, percents, text and symbols.
 // Indentation is handled separately (in lexer.ts); this file only looks at a single line.
 
 import { makeDiagnostic, type Diagnostic } from "../diagnostics/diagnostic.js";
 import { closestMatch } from "../diagnostics/suggest.js";
 import { isUnit, UNIT_MISSPELLINGS, UNIT_NAMES } from "../stdlib/units.js";
 import { isKeyword } from "./keywords.js";
-import type { Token } from "./tokens.js";
+import type { TextPart, Token } from "./tokens.js";
 
 const TWO_CHAR_SYMBOLS = ["==", "!=", "<=", ">="];
 const ONE_CHAR_SYMBOLS = "()[],:.=+-<>";
@@ -26,6 +26,9 @@ const isLetter = (c: string | undefined): boolean =>
   c !== undefined && ((c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || c === "_");
 const isNamePart = (c: string | undefined): boolean => isLetter(c) || isDigit(c);
 const isNonAscii = (c: string | undefined): boolean => c !== undefined && c.charCodeAt(0) > 127;
+
+/** What may go inside { } in text: a name or a dotted name (DECISIONS.md B6). */
+const INSERTION = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/;
 
 /** Picks the unit to suggest for a misspelled one, or "" if none is close. */
 function suggestUnit(unit: string): string {
@@ -130,6 +133,58 @@ export function tokenizeLine(
     tokens.push({ kind: "number", text: raw, value, line: lineNumber, column });
   };
 
+  /** Reads text in double quotes, splitting out {name} insertions. */
+  const readText = (): void => {
+    const begin = i;
+    const parts: TextPart[] = [];
+    let literal = "";
+    let closed = false;
+    const flush = (): void => {
+      if (literal !== "") parts.push({ kind: "literal", text: literal });
+      literal = "";
+    };
+    i++; // the opening quote
+    while (i < line.length) {
+      const ch = line[i] as string;
+      if (ch === '"') {
+        closed = true;
+        i++;
+        break;
+      }
+      if (ch === "{") {
+        const close = line.indexOf("}", i + 1);
+        const quote = line.indexOf('"', i + 1);
+        if (close === -1 || (quote !== -1 && quote < close)) {
+          // A "{" that is never closed inside this text.
+          const end = quote === -1 ? line.length : quote;
+          error("E113", i, { inside: line.slice(i + 1, end) });
+          i = end;
+          continue;
+        }
+        const inside = line.slice(i + 1, close);
+        const path = inside.trim();
+        if (INSERTION.test(path)) {
+          flush();
+          parts.push({ kind: "insert", path: path.split("."), column: i + 1 });
+        } else {
+          error("E113", i, { inside });
+        }
+        i = close + 1;
+        continue;
+      }
+      if (ch === "}") {
+        error("E114", i);
+        i++;
+        continue;
+      }
+      literal += ch;
+      i++;
+    }
+    if (!closed) error("E112", begin);
+    flush();
+    tokens.push({ kind: "text", text: line.slice(begin, i), parts, line: lineNumber, column: begin + 1 });
+  };
+
   while (i < line.length) {
     const c = line[i] as string;
 
@@ -138,6 +193,8 @@ export function tokenizeLine(
     } else if (c === "\t") {
       error("E102", i);
       i++;
+    } else if (c === '"') {
+      readText();
     } else if (c === "#") {
       break; // a comment runs to the end of the line
     } else if (isDigit(c)) {
