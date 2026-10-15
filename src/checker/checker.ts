@@ -6,6 +6,7 @@ import { closestMatch } from "../diagnostics/suggest.js";
 import type {
   Argument,
   BinaryExpression,
+  Block,
   CallExpression,
   DefineStatement,
   Expression,
@@ -54,6 +55,7 @@ import {
   typeName,
   UNKNOWN,
   ZONE,
+  TASK_RESULT,
   type Accept,
   type PartRole,
   type Type,
@@ -117,6 +119,21 @@ interface ValueContext {
   readonly role?: PartRole;
 }
 
+/** Short names for the slots that statements accept (TYPES_AND_UNITS.md section 4). */
+const FRAME: Accept[] = [{ kind: "Frame" }];
+const ACTUATOR: Accept[] = [{ kind: "Actuator" }];
+const SENSOR: Accept[] = [{ kind: "Sensor" }];
+const ROBOT: Accept[] = [{ kind: "Robot" }];
+const TARGET: Accept[] = [{ kind: "Pose" }, { kind: "Place" }, { kind: "Object" }];
+const OBJECT_ONLY: Accept[] = [{ kind: "Object" }];
+const PLACE_ONLY: Accept[] = [{ kind: "Place" }];
+const ROUTE: Accept[] = [{ kind: "Route" }];
+const ZONE_ONLY: Accept[] = [{ kind: "Zone" }];
+const amountOf = (dimension: Dimension): Accept[] => [{ kind: "Quantity", dimension }];
+
+/** A language code: two or three lower-case letters, like en, hi or ar (ISO 639). */
+const LANGUAGE_CODE = /^[a-z]{2,3}$/;
+
 const MISSING_PART_CODE: Readonly<Record<PartRole, string>> = { frame: "E203", actuator: "E204", sensor: "E205" };
 
 export class Checker {
@@ -137,6 +154,10 @@ export class Checker {
   /** Files being imported right now, to catch files that import each other (E214). */
   private readonly importChain: string[] = [];
   private readonly imported = new Set<string>();
+  /** How many on fail: blocks we are inside; error only exists there (Guidebook §8). */
+  private onFailDepth = 0;
+  /** Every name the program has bound anywhere, with its line, to explain names used out of their block. */
+  private readonly boundAnywhere = new Map<string, number>();
 
   constructor(private readonly options: CheckOptions = {}) {}
 
@@ -169,6 +190,31 @@ export class Checker {
   checkProgram(program: Program): void {
     for (const siteMap of this.options.siteMaps ?? []) this.checkOtherFile(siteMap.name, siteMap.source, "site map");
     for (const statement of program.statements) this.checkStatement(statement);
+    this.checkOnFail(program.onFail);
+  }
+
+  /** Checks a block in its own scope. `setup` binds names first, like a loop variable. */
+  protected checkBlock(block: Block, setup: (scope: Scope) => void = () => {}): void {
+    const outer = this.scope;
+    this.scope = new Scope(outer);
+    try {
+      setup(this.scope);
+      for (const statement of block.statements) this.checkStatement(statement);
+    } finally {
+      this.scope = outer;
+    }
+    this.checkOnFail(block.onFail);
+  }
+
+  /** on fail: runs with error holding the failed task's result (Guidebook §8). */
+  private checkOnFail(onFail: Block["onFail"]): void {
+    if (onFail === null) return;
+    this.onFailDepth++;
+    try {
+      this.checkBlock(onFail.body);
+    } finally {
+      this.onFailDepth--;
+    }
   }
 
   /**
@@ -226,9 +272,163 @@ export class Checker {
       case "Import":
         this.checkImport(statement);
         return;
+      case "CallStatement":
+        this.checkCall(statement.call);
+        return;
+
+      // Motion (Guidebook §5)
+      case "Move":
+        this.expectValue(statement.frame, FRAME, "the frame to move");
+        this.expectValue(statement.target, TARGET, "the target of move");
+        this.optional(statement.speed, amountOf("Speed"), "speed");
+        this.optional(statement.tolerance, amountOf("Length"), "tolerance");
+        this.optional(statement.via, ROUTE, "via");
+        for (const zone of statement.avoid) this.expectValue(zone, ZONE_ONLY, "avoid");
+        return;
+      case "Drive":
+        this.expectValue(statement.frame, FRAME, "the frame to drive");
+        this.optional(statement.distance, amountOf("Length"), "by");
+        this.optional(statement.speed, amountOf("Speed"), "speed");
+        return;
+      case "Turn":
+        this.expectValue(statement.frame, FRAME, "the frame to turn");
+        this.expectValue(statement.angle, amountOf("Angle"), "the angle to turn by");
+        this.optional(statement.speed, amountOf("AngularSpeed"), "speed");
+        return;
+      case "Takeoff":
+        this.expectValue(statement.robot, ROBOT, "the robot to take off");
+        this.expectValue(statement.height, amountOf("Length"), "the height");
+        return;
+      case "Land":
+        this.expectValue(statement.robot, ROBOT, "the robot to land");
+        this.optional(statement.at, PLACE_ONLY, "at");
+        return;
+      case "Stop":
+        this.expectValue(statement.robot, ROBOT, "the robot to stop");
+        return;
+
+      // Manipulation
+      case "Grip":
+        this.expectValue(statement.actuator, ACTUATOR, "the gripper or hand");
+        this.optional(statement.force, amountOf("Force"), "force");
+        return;
+      case "Pick":
+        this.expectValue(statement.object, OBJECT_ONLY, "the object to pick");
+        this.expectValue(statement.robot, ROBOT, "using");
+        this.optional(statement.onto, FRAME, "onto");
+        return;
+      case "Place":
+        this.expectValue(statement.object, OBJECT_ONLY, "the object to place");
+        this.expectValue(statement.target, TARGET, "on");
+        this.expectValue(statement.frame, FRAME, "using");
+        return;
+      case "Pour":
+        this.expectValue(statement.from, OBJECT_ONLY, "from");
+        this.expectValue(statement.into, OBJECT_ONLY, "into");
+        this.checkCondition(statement.until, "until");
+        return;
+      case "Weld":
+        this.expectValue(statement.path, ROUTE, "the path to weld along");
+        this.expectValue(statement.speed, amountOf("Speed"), "speed");
+        this.expectValue(statement.current, amountOf("Current"), "current");
+        return;
+      case "Spray":
+        this.expectValue(statement.actuator, ACTUATOR, "the sprayer");
+        this.expectValue(statement.target, TARGET, "on");
+        this.expectValue(statement.amount, amountOf("Volume"), "amount");
+        return;
+
+      // Sensing, data and talking to people
+      case "Capture":
+        this.expectValue(statement.sensor, SENSOR, "the sensor to capture with");
+        this.checkText(statement.file);
+        return;
+      case "Log":
+        for (const value of statement.values) this.checkValue(value);
+        return;
+      case "Alert":
+        this.checkText(statement.message);
+        return;
+      case "Say":
+        this.checkText(statement.message);
+        this.checkLang(statement.lang, statement);
+        return;
+      case "Confirm":
+        this.checkText(statement.question);
+        this.checkLang(statement.lang, statement);
+        return;
+
+      // Control flow
+      case "If":
+        for (const branch of statement.branches) {
+          this.checkCondition(branch.condition, branch === statement.branches[0] ? "if" : "elif");
+          this.checkBlock(branch.body);
+        }
+        if (statement.elseBody !== null) this.checkBlock(statement.elseBody);
+        return;
+      case "For": {
+        const list = this.checkValue(statement.list);
+        let item: Type = UNKNOWN;
+        if (list.kind === "List") item = list.item;
+        else if (list.kind === "Route") item = { kind: list.item };
+        else if (list.kind !== "Unknown") {
+          this.report("E306", statement.list, { slot: "for ... in", expected: "a List or Route", got: typeName(list) });
+        }
+        this.checkBlock(statement.body, () => this.bind(statement.variable, item, statement));
+        return;
+      }
+      case "Repeat":
+        if (statement.count !== null) this.checkRepeatCount(statement.count);
+        if (statement.interval !== null) this.expectValue(statement.interval, amountOf("Time"), "repeat every");
+        this.checkBlock(statement.body);
+        return;
+      case "Wait":
+        this.expectValue(statement.duration, amountOf("Time"), "wait");
+        return;
+      case "WaitUntil":
+        this.checkCondition(statement.condition, "wait until");
+        this.optional(statement.timeout, amountOf("Time"), "timeout");
+        return;
+      case "Parallel":
+        this.checkBlock(statement.body);
+        return;
+
+      // Safety
+      case "Safety":
+        for (const rule of statement.rules) {
+          if (rule.robot !== null) this.expectValue(rule.robot, ROBOT, rule.action);
+          this.optional(rule.at, PLACE_ONLY, "at");
+          if (rule.message !== null) this.checkText(rule.message);
+          this.checkCondition(rule.condition, "when");
+        }
+        return;
       default:
         return;
     }
+  }
+
+  private optional(expr: Expression | null, accepts: readonly Accept[], slot: string): void {
+    if (expr !== null) this.expectValue(expr, accepts, slot);
+  }
+
+  /** Conditions must be true or false; there are no "truthy" numbers or text (TYPES_AND_UNITS.md section 3). */
+  protected checkCondition(expr: Expression, slot: string): void {
+    const type = this.checkValue(expr);
+    if (type.kind !== "Bool" && type.kind !== "Unknown") this.report("E307", expr, { slot, got: typeName(type) });
+  }
+
+  /** repeat N times: N is a whole number, 0 or more. */
+  private checkRepeatCount(count: Expression): void {
+    const type = this.expectValue(count, [{ kind: "Number" }], "repeat ... times");
+    if (type.kind !== "Number") return;
+    const constant = evaluateConstant(count, (name) => this.constantOf(name));
+    if (constant?.kind === "Number" && (!Number.isInteger(constant.value) || constant.value < 0)) {
+      this.report("E312", count, { value: String(constant.value) });
+    }
+  }
+
+  private checkLang(lang: string | null, at: Position): void {
+    if (lang !== null && !LANGUAGE_CODE.test(lang)) this.report("E316", at, { code: lang });
   }
 
   /** robot NAME = connect("ADDRESS"): finds the robot's model so its parts can be checked. */
@@ -303,6 +503,7 @@ export class Checker {
       return undefined;
     }
     const binding: Binding = { kind: "value", type, line: at.line };
+    if (!this.boundAnywhere.has(name)) this.boundAnywhere.set(name, at.line);
     const earlier = this.scope.define(name, binding);
     if (earlier !== undefined) {
       this.report("E207", at, { name, line: String(earlier.line) });
@@ -426,6 +627,13 @@ export class Checker {
     }
     const builtIn = this.checkBuiltInName(name, at);
     if (builtIn !== null) return builtIn;
+    const boundElsewhere = this.boundAnywhere.get(name);
+    if (boundElsewhere !== undefined) {
+      // Defined in a block that has ended, like a loop variable used after its loop.
+      // Such a name is never taken for an object (DECISIONS.md D4).
+      this.report("E202", at, { name, elsewhere: String(boundElsewhere) });
+      return UNKNOWN;
+    }
     if (context.objectAllowed === true) {
       // A name nobody defined is an object the robot finds at run time (DECISIONS.md D4),
       // unless it looks like a typo of a name that does exist.
@@ -441,6 +649,11 @@ export class Checker {
   /** The type of a built-in name used on its own, or null if `name` is not built in. */
   protected checkBuiltInName(name: string, at: Position): Type | null {
     if (name === "places" || name === "zones" || name === "route") return { kind: "Namespace", namespace: name };
+    if (name === "error") {
+      if (this.onFailDepth > 0) return TASK_RESULT;
+      this.report("E216", at);
+      return UNKNOWN;
+    }
     if (name === "field" || name === "shelf") {
       this.report("E212", at, { name });
       return UNKNOWN;

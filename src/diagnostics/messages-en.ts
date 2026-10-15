@@ -163,9 +163,11 @@ const messages: Record<string, MessageEntry> = {
   E202: {
     message: (a) => `'${arg(a, "name")}' is not defined`,
     fix: (a) =>
-      arg(a, "suggestion") !== ""
-        ? `Did you mean '${arg(a, "suggestion")}'?`
-        : "Define it above this line, with let, robot or task.",
+      arg(a, "elsewhere") !== ""
+        ? `'${arg(a, "name")}' is defined on line ${arg(a, "elsewhere")}, but only inside its own block, so it cannot be used here.`
+        : arg(a, "suggestion") !== ""
+          ? `Did you mean '${arg(a, "suggestion")}'?`
+          : "Define it above this line, with let, robot or task.",
   },
   E203: partMessage("frame", "frames"),
   E204: partMessage("actuator", "actuators"),
@@ -222,6 +224,10 @@ const messages: Record<string, MessageEntry> = {
     message: (a) => `${arg(a, "file")} may only contain ${arg(a, "allowed")}`,
     fix: () => "Move everything else into the main program.",
   },
+  E216: {
+    message: () => "'error' can only be used inside on fail:",
+    fix: () => "error holds the reason a task failed, so it only exists inside an on fail: block.",
+  },
 
   // ---- E3xx: types and units ----
   E301: {
@@ -261,6 +267,10 @@ const messages: Record<string, MessageEntry> = {
         ? arg(a, "fix")
         : "spec/TYPES_AND_UNITS.md section 4 lists what each statement expects.",
   },
+  E307: {
+    message: (a) => `the condition of '${arg(a, "slot")}' must be true or false, but this is ${arg(a, "got")}`,
+    fix: () => "Use a comparison, like distance < 20cm, or a true/false value, like rover.tray.loaded.",
+  },
   E308: {
     message: (a) => `${arg(a, "value")} is outside 0% to 100%`,
     fix: () => "A percent must be between 0% and 100%.",
@@ -277,6 +287,10 @@ const messages: Record<string, MessageEntry> = {
     message: (a) => `the name in ${arg(a, "what")} must be fixed text in double quotes`,
     fix: () => 'Write it like .has("vision") or .sense("thermal"), so it can be checked before the program runs.',
   },
+  E312: {
+    message: (a) => `repeat ${arg(a, "value")} times is not possible`,
+    fix: () => "The number of times must be a whole number, 0 or more.",
+  },
   E313: {
     message: (a) => `a list cannot mix ${arg(a, "first")} and ${arg(a, "other")}`,
     fix: () => "Put only one kind of value in a list.",
@@ -284,6 +298,10 @@ const messages: Record<string, MessageEntry> = {
   E315: {
     message: (a) => `{${arg(a, "inside")}} is ${arg(a, "type")}, which cannot be shown as text`,
     fix: () => "Insert a number, a quantity, text or a name such as {checkpoint.name}.",
+  },
+  E316: {
+    message: (a) => `'${arg(a, "code")}' is not a language code`,
+    fix: () => "Use a short language code of 2 or 3 lower-case letters, such as en, hi, ar or es.",
   },
   E317: {
     message: (a) => `the second value of ${arg(a, "what")} must be a unit, like cm`,

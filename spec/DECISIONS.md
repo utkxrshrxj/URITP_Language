@@ -319,6 +319,9 @@ reject a doubtful program rather than guess.
   - If the robot cannot find it, the task fails at run time (R7xx).
   - To catch typos, an unknown name that is one or two letters away from a
     name already in scope is an E2xx error with "did you mean ...?".
+  - A name the program binds somewhere else (for example a loop variable
+    used after its loop has ended) is never taken for an object. It is an
+    E2xx error that says where the name was defined.
   - An unknown name anywhere else is E2xx.
 
 ### D5. Tasks

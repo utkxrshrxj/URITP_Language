@@ -69,6 +69,7 @@ searchable (§8). The English wording lives in
 | E213 | an imported file that cannot be found | `import "missing.uritp"` |
 | E214 | files that import each other in a circle | `a.uritp` imports `b.uritp`, which imports `a.uritp` |
 | E215 | a site map or imported file holding statements it may not | `move` inside `site.uritp` |
+| E216 | `error` used outside `on fail:` | `log error.reason` at the top level |
 
 ## E3xx: types and units (Phase 3)
 
@@ -80,12 +81,15 @@ searchable (§8). The English wording lives in
 | E304 | a bare number where a quantity is expected | `distance < 20` (did you mean `20cm`?) |
 | E305 | a bare number where a percent is expected | `battery < 25` (did you mean `25%`?) |
 | E306 | a value of the wrong kind for a slot | `pose(1m, 2m, 0m, yaw=90cm)` |
+| E307 | a condition that is not true or false | `if 5:` |
 | E308 | a percent outside 0% to 100% | `150%`, `60% + 50%` |
 | E309 | the wrong number of values in brackets | `pose(1m, 2m)` |
 | E310 | a `name=value` argument that does not exist | `pose(1m, 2m, 0m, heading=90deg)` |
 | E311 | `.has()` or `.sense()` without fixed text | `rover.sense(name)` |
+| E312 | `repeat N times` with N not a whole number, 0 or more | `repeat 2.5 times:` |
 | E313 | a list that mixes kinds of value | `[1cm, 2s]` |
 | E315 | a `{ }` insertion that cannot be shown as text | `"at {p}"` where `p` is a Pose |
+| E316 | a `lang` code that is not a language code | `say "hi" lang english` |
 | E317 | `to()` or `round()` without a unit as second value | `to(1.2m, banana)` |
 | E318 | `to()` or `round()` to a unit of another kind | `to(1.2m, s)` |
 | E319 | a polygon with fewer than 3 corners | `polygon(pose(...), pose(...))` |
