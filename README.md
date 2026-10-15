@@ -11,9 +11,10 @@ robots like an adapter:
    explanation and a suggested fix.
 4. A robot driver carries out the checked instructions.
 
-> **Status:** a program is fully checked against its robots' manifests before
-> anything moves: syntax, names, types, units, capabilities and safety
-> (Phases 2 to 4). Code generation and the runner come next.
+> **Status:** programs are fully checked against their robots' manifests and
+> then run, with each robot receiving only §9.2 instructions in SI units
+> (Phases 2 to 5). Company drivers come next; today programs run against
+> simulated test robots only.
 
 ## Quick start
 
@@ -68,8 +69,8 @@ any of these companies. See [docs/COMPANIES.md](docs/COMPANIES.md).
 | 2 | Lexer and parser with E1xx errors | Done |
 | 3 | Names, types and units (E2xx, E3xx) | Done |
 | 4 | Manifests, capabilities and safety (E4xx, E5xx, W6xx) | Done |
-| 5 | Code generation and runner | Next |
-| 6 | Drivers for the three companies | |
+| 5 | Code generation and runner | Done |
+| 6 | Drivers for the three companies | Next |
 | 7 | Voice and text layer | |
 | 8 | Command line, conformance tests, Hindi messages, v0.1.0 | |
 

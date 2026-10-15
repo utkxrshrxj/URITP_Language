@@ -16,6 +16,6 @@ places or routes, a `site.uritp` site map that is loaded automatically
 
 The letters and numbers refer to entries in [spec/DECISIONS.md](../spec/DECISIONS.md).
 
-The tests parse every program and run the name, type and unit checks on it,
-using small made-up robot models (`tests/checker/models.ts`). Capability and
-safety checks against real manifests come in Phase 4.
+The tests check every program with small made-up robot models
+(`tests/checker/models.ts`), then run it against simulated test robots and
+check the instructions each robot receives (`tests/runtime/examples-run.test.ts`).
