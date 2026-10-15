@@ -339,7 +339,9 @@ reject a doubtful program rather than guess.
   - Robots, tasks and top-level `let`s share one set of names.
   - Built-in names cannot be redefined: `places`, `zones`, `route`, `field`,
     `shelf`, `error`, `pose`, `polygon`, `distance`, `now`, `len`, `round`,
-    `text`.
+    `text`. (The Guidebook's §4 text uses `distance < 20cm` as an example
+    value; in a program that value needs another name, such as `gap`,
+    because `distance` is the built-in function `distance(a, b)`.)
 
 ### D7. Places have a name and an id
 - **Guidebook:** `.id` and `.name` are listed as object properties (§6).
@@ -495,6 +497,22 @@ reject a doubtful program rather than guess.
   - `ROBOT.sense("NAME")` returns a `Reading` (§5 and the example agree).
   - The `Sensor` itself is written `ROBOT.NAME`, as in `capture drone.camera`.
 
+### D23. The unit in `to()` and `round()`
+- **Guidebook:** shows `to(1.2m, cm)`: the unit is written as a bare word
+  (§6).
+- **Decision:**
+  - The second value of `to()` and `round()` is a unit name written without
+    quotes, and it must be a unit of the same kind as the first value.
+  - Units with a `/` (`m/s`, `km/h`, `deg/s`, ...) cannot be written as a
+    bare word, because `/` is not an operator. So in v0.1, `to()` and
+    `round()` cannot convert to those units. A way to write them is under
+    "Proposed, not adopted".
+
+### D24. A place can go wherever a pose can
+- **Decision:** A place is a named pose, so a `Place` is accepted wherever a
+  `Pose` is expected (for example `distance(places.a, places.b)`). The
+  opposite is not true: a plain pose has no `.name`.
+
 ---
 
 ## Proposed, not adopted
@@ -518,3 +536,4 @@ them is part of URITP v0.1. The compiler rejects programs that use them.
 | List indexing or `.first` / `.last` on routes | Example vi (`seam.start`) |
 | Manifest entries for actuator properties and analysis result fields | D10, D11 |
 | Manifest entries for native languages and stopping time | D20 |
+| Writing units with `/` in `to()`, e.g. `to(x, "km/h")` | D23 |

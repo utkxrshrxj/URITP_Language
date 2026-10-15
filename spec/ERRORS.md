@@ -50,6 +50,36 @@ searchable (§8). The English wording lives in
 | E130 | `{ }` in text that must be fixed | `connect("sim:{name}")` |
 | E131 | a safety rule with an action that does not exist | `returnhome drone when ...` |
 
+## E2xx: names (Phase 3)
+
+| Code | Meaning | Example that triggers it |
+|---|---|---|
+| E202 | a name that is not defined | `let y = targt + 1cm` (did you mean `target`?) |
+| E207 | a name bound twice in the same block (§4) | `let x = 5cm` then `let x = 6cm` |
+| E208 | a built-in name redefined | `let places = 1` |
+| E210 | a call of a task or function that does not exist | `pos(1m, 2m, 0m)` (did you mean `pose`?) |
+| E211 | a property that a value does not have | `places.dock.colour` |
+| E212 | a field or shelf map, not supported in URITP 0.1 | `field.row(4)` |
+
+## E3xx: types and units (Phase 3)
+
+| Code | Meaning | Example that triggers it |
+|---|---|---|
+| E301 | adding or subtracting values of different kinds | `10cm + 2s` |
+| E302 | an operator used on a value it does not work on | `"a" + "b"`, `-25%`, `not 5` |
+| E303 | comparing values of different kinds | `90deg > 80deg_c` |
+| E304 | a bare number where a quantity is expected | `distance < 20` (did you mean `20cm`?) |
+| E305 | a bare number where a percent is expected | `battery < 25` (did you mean `25%`?) |
+| E306 | a value of the wrong kind for a slot | `pose(1m, 2m, 0m, yaw=90cm)` |
+| E308 | a percent outside 0% to 100% | `150%`, `60% + 50%` |
+| E309 | the wrong number of values in brackets | `pose(1m, 2m)` |
+| E310 | a `name=value` argument that does not exist | `pose(1m, 2m, 0m, heading=90deg)` |
+| E313 | a list that mixes kinds of value | `[1cm, 2s]` |
+| E315 | a `{ }` insertion that cannot be shown as text | `"at {p}"` where `p` is a Pose |
+| E317 | `to()` or `round()` without a unit as second value | `to(1.2m, banana)` |
+| E318 | `to()` or `round()` to a unit of another kind | `to(1.2m, s)` |
+| E319 | a polygon with fewer than 3 corners | `polygon(pose(...), pose(...))` |
+
 ## Codes fixed by the Guidebook
 
 These keep the meaning the Guidebook gives them (DECISIONS.md D21). They are
@@ -58,7 +88,6 @@ built in later phases, along with the other codes of their stage.
 | Code | Meaning | Phase |
 |---|---|---|
 | E203 | a robot has no frame with that name | 3 |
-| E304 | a quantity was expected but a bare number was given | 3 |
 | E401 | a command needs a profile the robot does not have | 4 |
 | E502 | a speed is above the robot's safety limit | 4 |
 | W601 | a vendor extension is used without a `.has(...)` guard | 4 |

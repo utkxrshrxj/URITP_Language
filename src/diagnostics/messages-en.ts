@@ -141,6 +141,112 @@ const messages: Record<string, MessageEntry> = {
         ? `Did you mean '${arg(a, "suggestion")}'? A safety rule is written: ACTION when CONDITION.`
         : "A safety rule is written: ACTION when CONDITION. The actions are stop, return_home, land and alert.",
   },
+
+  // ---- E2xx: names ----
+  E202: {
+    message: (a) => `'${arg(a, "name")}' is not defined`,
+    fix: (a) =>
+      arg(a, "suggestion") !== ""
+        ? `Did you mean '${arg(a, "suggestion")}'?`
+        : "Define it above this line, with let, robot or task.",
+  },
+  E207: {
+    message: (a) => `'${arg(a, "name")}' is already used in this block, on line ${arg(a, "line")}`,
+    fix: () => "A name cannot be given a new value. Choose a different name.",
+  },
+  E208: {
+    message: (a) => `'${arg(a, "name")}' is a built-in name, so it cannot be redefined`,
+    fix: () => "Choose a different name.",
+  },
+  E210: {
+    message: (a) => `there is no task or function called '${arg(a, "name")}'`,
+    fix: (a) =>
+      arg(a, "suggestion") !== ""
+        ? `Did you mean '${arg(a, "suggestion")}'?`
+        : "Define the task above the line that calls it, with task NAME(PARAMS):",
+  },
+  E211: {
+    message: (a) => `'${arg(a, "name")}' is not a property of ${arg(a, "owner")}`,
+    fix: (a) =>
+      arg(a, "fix") !== ""
+        ? arg(a, "fix")
+        : "Check the spelling. The properties of each kind of value are listed in Guidebook §6.",
+  },
+  E212: {
+    message: (a) => `'${arg(a, "name")}' maps are not supported in URITP 0.1`,
+    fix: () => "Use places, zones and routes from a site map instead.",
+  },
+
+  // ---- E3xx: types and units ----
+  E301: {
+    message: (a) => `cannot ${arg(a, "op")} ${arg(a, "left")} and ${arg(a, "right")}`,
+    fix: () => "Both sides must be the same kind of value, like 10cm + 5mm.",
+  },
+  E302: {
+    message: (a) => `'${arg(a, "op")}' cannot be used with ${arg(a, "type")}`,
+    fix: (a) =>
+      arg(a, "fix") !== ""
+        ? arg(a, "fix")
+        : "spec/TYPES_AND_UNITS.md section 3 lists which operators work on which values.",
+  },
+  E303: {
+    message: (a) => `cannot compare ${arg(a, "left")} with ${arg(a, "right")}`,
+    fix: () => "Compare values of the same kind, like distance < 20cm.",
+  },
+  E304: {
+    message: (a) =>
+      `expected ${arg(a, "expected")}, got Number${arg(a, "value") !== "" ? ` '${arg(a, "value")}'` : ""}`,
+    fix: (a) =>
+      arg(a, "suggestion") !== ""
+        ? `Did you mean ${arg(a, "suggestion")}?`
+        : "Give the value a unit, like 10cm or 2s.",
+  },
+  E305: {
+    message: (a) => `expected Percent, got Number${arg(a, "value") !== "" ? ` '${arg(a, "value")}'` : ""}`,
+    fix: (a) =>
+      arg(a, "suggestion") !== ""
+        ? `Did you mean ${arg(a, "suggestion")}? Percent and plain numbers never mix.`
+        : "Percent and plain numbers never mix. Write percents with %, like 25%.",
+  },
+  E306: {
+    message: (a) => `expected ${arg(a, "expected")} for ${arg(a, "slot")}, got ${arg(a, "got")}`,
+    fix: (a) =>
+      arg(a, "fix") !== ""
+        ? arg(a, "fix")
+        : "spec/TYPES_AND_UNITS.md section 4 lists what each statement expects.",
+  },
+  E308: {
+    message: (a) => `${arg(a, "value")} is outside 0% to 100%`,
+    fix: () => "A percent must be between 0% and 100%.",
+  },
+  E309: {
+    message: (a) => `${arg(a, "what")} takes ${arg(a, "expected")} values in brackets, but ${arg(a, "got")} were given`,
+    fix: () => "Check how many values go between the brackets.",
+  },
+  E310: {
+    message: (a) => `${arg(a, "what")} has no argument called '${arg(a, "name")}'`,
+    fix: () => "Remove it or check the spelling.",
+  },
+  E313: {
+    message: (a) => `a list cannot mix ${arg(a, "first")} and ${arg(a, "other")}`,
+    fix: () => "Put only one kind of value in a list.",
+  },
+  E315: {
+    message: (a) => `{${arg(a, "inside")}} is ${arg(a, "type")}, which cannot be shown as text`,
+    fix: () => "Insert a number, a quantity, text or a name such as {checkpoint.name}.",
+  },
+  E317: {
+    message: (a) => `the second value of ${arg(a, "what")} must be a unit, like cm`,
+    fix: () => "Write the unit without quotes, like to(1.2m, cm).",
+  },
+  E318: {
+    message: (a) => `cannot convert ${arg(a, "from")} to '${arg(a, "unit")}'`,
+    fix: () => "Convert only to a unit of the same kind, like a Length to cm.",
+  },
+  E319: {
+    message: (a) => `a polygon needs at least 3 corners, but this one has ${arg(a, "count")}`,
+    fix: () => "Give three or more poses.",
+  },
 };
 
 export const ENGLISH: MessageTable = { fixLabel: "Fix", messages };
