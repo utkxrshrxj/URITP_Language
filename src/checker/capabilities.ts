@@ -7,7 +7,7 @@ import type { Accept } from "./types.js";
 
 /**
  * The profiles a statement needs. Each inner list is "any one of these"; every inner list
- * must be met. So weld needs manipulation and tooling, and turn needs any one of three.
+ * must be met. So turn needs any one of three, and weld needs tooling (DECISIONS.md D43).
  */
 export const NEEDS: Readonly<Record<string, readonly (readonly string[])[]>> = {
   drive: [["navigation"]],
@@ -21,7 +21,7 @@ export const NEEDS: Readonly<Record<string, readonly (readonly string[])[]>> = {
   pick: [["manipulation"]],
   place: [["manipulation"]],
   pour: [["manipulation"]],
-  weld: [["manipulation"], ["tooling"]],
+  weld: [["tooling"]],
   spray: [["tooling"]],
   say: [["speech"]],
   confirm: [["speech"]],

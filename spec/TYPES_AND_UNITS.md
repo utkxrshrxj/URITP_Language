@@ -201,12 +201,12 @@ A robot can run a statement only if its manifest declares the profile
 |---|---|
 | `core` (every robot) | `robot`, `let`, `task`, `return`, `import`, `define`, calls, `move` (without `via`/`avoid`), `stop`, `wait`, `if`, `for`, `repeat`, `break`, `parallel`, `on fail`, `safety` with `stop` and `alert` actions, `sense`, `log`, `alert`, places, zones, routes and the rest of the standard library |
 | `navigation` | `drive`, `turn`, `via`, `avoid` |
-| `manipulation` | `grip`, `pick`, `place`, `pour`, and `weld` (together with `tooling`) |
+| `manipulation` | `grip`, `pick`, `place`, `pour` |
 | `flight` | `takeoff`, `land`, `turn`, `return_home` |
 | `legged` | `turn` and terrain-aware base goals |
 | `speech` | `say`, `confirm`, `ask`, `lang` |
 | `vision` | `capture`, `.analyse(...)` |
-| `tooling` | `weld` (together with `manipulation`), `spray` |
+| `tooling` | `weld`, `spray` (D43) |
 
 - `turn` is allowed with any one of `navigation`, `legged` or `flight`.
 - `say`, `confirm`, `ask`, `pour` and `weld` name no robot, so they run on

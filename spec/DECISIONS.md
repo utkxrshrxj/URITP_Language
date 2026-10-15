@@ -296,7 +296,8 @@ reject a doubtful program rather than guess.
   `tooling`.
 - **Decision:**
   - `capture` needs the `vision` profile and a sensor of that name.
-  - `weld` needs `manipulation` and `tooling`.
+  - `weld` needs `tooling` (changed by D43; it first needed `manipulation`
+    as well).
   - `spray` needs `tooling`.
   - `turn` needs any one of `navigation`, `legged` or `flight`.
   - The full list is in `spec/TYPES_AND_UNITS.md`.
@@ -770,6 +771,15 @@ reject a doubtful program rather than guess.
   with: a task's inputs, or a `for` loop's variable. It cannot use names the
   block binds with `let`, because the failure may have happened before that
   `let` ran (E202).
+
+### D43. Welding needs only the tooling profile
+- **Conflict:** §5 lists `weld` under "manipulation + welding tool", but §7's
+  table of profiles puts `weld` in `tooling` alone. D2 first asked for both.
+  The URITP playground's welding arm has `tooling` and no gripper, and welds.
+- **Decision:** `weld` needs `tooling`, as in §7. `manipulation` is about
+  gripping and carrying things; a welding arm moves a torch along a seam and
+  often has no gripper at all. `pick`, `place`, `grip` and `pour` still need
+  `manipulation`.
 
 ---
 

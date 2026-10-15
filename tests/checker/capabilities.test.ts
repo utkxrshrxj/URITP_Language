@@ -76,6 +76,11 @@ describe("statements that name no robot (DECISIONS.md D27)", () => {
     });
   });
 
+  it("lets a welding arm with tooling but no gripper weld (D43)", () => {
+    const options: CheckOptions = { ...OPTIONS, robots: () => ({ ...MODELS["welder"]!, profiles: ["core", "tooling"] }) };
+    expect(codes(lines(connect("welder"), "weld along route.seam speed 5mm/s current 180A"), options)).toEqual([]);
+  });
+
   it("gives E401 when the only robot cannot do it", () => {
     expect(codes(lines(connect("drone"), 'confirm "Go?"'), OPTIONS)).toEqual(["E401"]);
     expect(codes(lines(connect("rover"), "weld along route.seam speed 5mm/s current 180A"), OPTIONS)).toEqual(["E401"]);
