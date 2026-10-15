@@ -44,6 +44,8 @@ export interface RunOptions {
   readonly models: ReadonlyMap<string, RobotModel>;
   /** The connection to each robot, by its name in the program. */
   readonly robots: Readonly<Record<string, RobotPort>>;
+  /** Connections the safety watcher reads through, when they differ from `robots`. */
+  readonly safetyRobots?: Readonly<Record<string, RobotPort>>;
   readonly siteMaps?: readonly SourceFile[];
   readonly readFile?: (path: string) => string | null;
   readonly clock?: Clock;
@@ -471,7 +473,7 @@ export class Runner {
 
   /** Sends one instruction as a task and turns its outcome into a value or a failure. */
   private async send(robot: string, instr: Instruction, ctx: Context): Promise<TaskOutput | undefined> {
-    const port = this.port(robot);
+    const port = (ctx.checkingSafety === true ? this.options.safetyRobots?.[robot] : undefined) ?? this.port(robot);
     if (this.rules.length > 0 && ctx.checkingSafety !== true) await this.checkRules();
     if (this.programSignal.cancelled) throw new Cancelled(this.programSignal.reason);
     if (ctx.signal.cancelled) throw new Cancelled(ctx.signal.reason);

@@ -222,6 +222,8 @@ function makeRunner(loaded: Loaded, drivers: Record<string, Driver>, clock: Cloc
     program,
     models: loaded.check.models,
     robots: ports,
+    // The safety watcher's readings still reach each robot, but are not printed as instructions.
+    safetyRobots: drivers,
     siteMaps: loaded.siteMaps,
     readFile: loaded.readFile,
     clock,

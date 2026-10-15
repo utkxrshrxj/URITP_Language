@@ -20,6 +20,7 @@ const FILES: Record<string, string> = {
   "work/fast.uritp": lines('robot rover = connect("lab:rover")', "drive rover.base forward by 1m speed 3m/s"),
   "work/two.uritp": lines('robot a = connect("x")', 'robot b = connect("y")', "drive a.base forward by 1m", "drive b.base backward by 1m"),
   "work/blocked.uritp": lines('robot rover = connect("lab:rover")', "drive rover.base forward by 5m"),
+  "work/safe.uritp": lines('robot rover = connect("lab:rover")', "safety:", "    stop rover when rover.battery < 20%", "drive rover.base forward by 1m speed 0.2m/s"),
   "manifests/acme/rover.uritp": ROVER,
 };
 
@@ -109,6 +110,15 @@ describe("uritp run", () => {
     expect(output).toContain("rover <- MOVE frame=base target=pose(1,0,0,0,0,0) speed=0.2");
     expect(output).toContain("The program ended: succeeded.");
     expect(output).toContain("Lines the rover driver would send (simulator only, not tested on real hardware):");
+  });
+
+  it("does not print the safety watcher's readings, but still sends them to the robot", async () => {
+    const { code, output } = await cli(["run", "work/safe.uritp", ...ROBOT, "--protocol"], async () => createPlain);
+    expect(code).toBe(0);
+    const [printed, sent] = output.split("Lines the rover driver would send");
+    expect(printed).toContain("rover <- DRIVE frame=base distance=1 speed=0.2");
+    expect(printed).not.toContain("SENSE");
+    expect(sent).toContain("SENSE sensor=battery");
   });
 
   it("reports a failure while running with its R7xx code", async () => {
