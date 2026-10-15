@@ -16,5 +16,6 @@ places or routes, a `site.uritp` site map that is loaded automatically
 
 The letters and numbers refer to entries in [spec/DECISIONS.md](../spec/DECISIONS.md).
 
-Today these programs are only checked for correct syntax (Phase 2). Name, type,
-unit and safety checks come in later phases.
+The tests parse every program and run the name, type and unit checks on it,
+using small made-up robot models (`tests/checker/models.ts`). Capability and
+safety checks against real manifests come in Phase 4.

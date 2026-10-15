@@ -83,6 +83,8 @@ Notes:
 - **Move targets.** A `Pose`, `Place` or `Object` can be the target of `move`.
   An `Object` target means the object's own reference frame; helpers such as
   `.above(10cm)` give a precise pose (§4).
+- **Places are poses.** A `Place` is accepted wherever a `Pose` is expected
+  (D24), but a plain `Pose` has no `.name` or `.id`.
 - **Routes are lists.** A `Route` can be used anywhere a list is expected, for
   example in `for point in route.roof_inspect:`. Its items are `Place`s (or
   `Pose`s, if the route was built from poses).

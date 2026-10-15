@@ -516,6 +516,22 @@ reject a doubtful program rather than guess.
   `Pose` is expected (for example `distance(places.a, places.b)`). The
   opposite is not true: a plain pose has no `.name`.
 
+### D25. What an imported file may contain
+- **Guidebook:** `import` "loads tasks, places and zones from another file"
+  (§5).
+- **Decision:** An imported file may contain only `define`, `task` and
+  `import` lines. Anything else (a `robot` line or a `move`, for example) is
+  an E2xx error naming the file, because importing a file should never make
+  a robot move. Each file is loaded once, and files that import each other
+  in a circle are an error.
+
+### D26. Every robot needs a manifest to be checked
+- **Decision:** The checker must know each connected robot's frames,
+  actuators and sensors, which come from its manifest (§9.1). A program
+  that connects a robot with no manifest is rejected (E201), because
+  nothing about it could be checked before it moves (§1, "check before you
+  move").
+
 ---
 
 ## Proposed, not adopted

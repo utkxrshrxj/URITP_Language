@@ -11,8 +11,8 @@ robots like an adapter:
    explanation and a suggested fix.
 4. A robot driver carries out the checked instructions.
 
-> **Status:** the lexer and parser are built (Phase 2). Programs are checked for
-> correct syntax; name, type, unit and safety checks come next.
+> **Status:** syntax, names, types and units are checked (Phases 2 and 3).
+> Manifests, capabilities and safety checks come next.
 
 ## Quick start
 
@@ -65,8 +65,8 @@ any of these companies. See [docs/COMPANIES.md](docs/COMPANIES.md).
 | 0 | Repo, TypeScript, Vitest, docs folder, source documents | Done |
 | 1 | Language definition: grammar, types and units, decisions | Done |
 | 2 | Lexer and parser with E1xx errors | Done |
-| 3 | Names, types and units (E2xx, E3xx) | Next |
-| 4 | Manifests, capabilities and safety (E4xx, E5xx, W6xx) | |
+| 3 | Names, types and units (E2xx, E3xx) | Done |
+| 4 | Manifests, capabilities and safety (E4xx, E5xx, W6xx) | Next |
 | 5 | Code generation and runner | |
 | 6 | Drivers for the three companies | |
 | 7 | Voice and text layer | |
