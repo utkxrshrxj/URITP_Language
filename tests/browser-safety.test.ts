@@ -26,7 +26,7 @@ const NODE_ONLY = [
 ];
 
 describe("browser safety", () => {
-  const files = ["src", "drivers"].flatMap(sourceFiles);
+  const files = ["src", "drivers", "conformance"].flatMap(sourceFiles);
 
   it("finds the files to check", () => {
     expect(files.length).toBeGreaterThan(30);
