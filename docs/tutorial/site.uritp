@@ -1,0 +1,10 @@
+# The site map for the tutorial: a small office floor. Illustrative positions only.
+
+define place dock    = pose(0m, 0m, 0m)
+define place kitchen = pose(4m, 1m, 0m)
+define place desk    = pose(2m, 3m, 0m)
+define place door    = pose(0m, 3.5m, 0m)
+define place landing = pose(9m, 1m, 0m)
+define zone stairs   = polygon(pose(8m, 0m, 0m), pose(10m, 0m, 0m),
+    pose(10m, 2m, 0m), pose(8m, 2m, 0m))
+define route rounds  = [places.kitchen, places.desk, places.door]

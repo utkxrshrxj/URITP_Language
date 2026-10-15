@@ -1,0 +1,7 @@
+# Creep forward in small steps, but stop as soon as something is close in front.
+robot rover = connect("lab:rover-1")
+
+repeat 5 times:
+    if rover.sense("distance_front").value < 20cm:
+        break
+    drive rover.base forward by 10cm

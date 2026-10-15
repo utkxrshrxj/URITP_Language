@@ -1,0 +1,11 @@
+# Looking before moving: the rover reads its distance sensor and decides what to do.
+robot rover = connect("lab:rover-1")
+
+let front = rover.sense("distance_front").value
+log "the nearest thing in front is {front} away"
+if front < 30cm:
+    turn rover.base by 90deg
+elif front < 1m:
+    drive rover.base forward by 10cm speed 0.05m/s
+else:
+    drive rover.base forward by 50cm

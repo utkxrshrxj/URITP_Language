@@ -1,0 +1,4 @@
+# A space between a number and its unit is a mistake too.
+robot rover = connect("lab:rover-1")
+
+turn rover.base by 90 deg

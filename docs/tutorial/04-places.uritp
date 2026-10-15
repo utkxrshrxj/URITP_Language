@@ -1,0 +1,6 @@
+# Going to named places from the site map.
+robot rover = connect("lab:rover-1")
+
+move rover.base to places.kitchen
+move rover.base to places.desk speed 0.25m/s
+move rover.base to places.dock

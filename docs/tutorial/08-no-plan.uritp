@@ -1,0 +1,6 @@
+# Trying to reach the stairs landing, with no plan for what to do if that fails.
+robot rover = connect("lab:rover-1")
+
+move rover.base to places.landing
+    avoid zones.stairs
+log "I am on the landing"

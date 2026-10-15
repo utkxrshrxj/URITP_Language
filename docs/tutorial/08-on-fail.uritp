@@ -1,0 +1,9 @@
+# Trying to reach the stairs landing, and going back to the dock if the robot cannot.
+robot rover = connect("lab:rover-1")
+
+move rover.base to places.landing
+    avoid zones.stairs
+log "I am on the landing"
+on fail:
+    log "I could not get there: {error.reason}"
+    move rover.base to places.dock

@@ -1,0 +1,12 @@
+# An arm moves a part from one bin to another, using a task with two inputs.
+robot arm = connect("lab:arm-1")
+
+task move_part(from_spot, to_spot):
+    move arm.tool to from_spot.above(10cm) speed 0.2m/s
+    move arm.tool to from_spot speed 0.1m/s
+    grip arm.gripper close force 40N
+    move arm.tool to to_spot.above(10cm) speed 0.2m/s
+    grip arm.gripper open
+
+move_part(places.bin_a, places.bin_b)
+move_part(places.bin_b, places.bin_a)

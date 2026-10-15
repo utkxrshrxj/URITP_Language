@@ -1,0 +1,10 @@
+# A task is a list of steps with a name, so it can be used again and again.
+robot rover = connect("lab:rover-1")
+
+task visit(spot):
+    move rover.base to spot
+    capture rover.camera save as "{spot.name}.jpg"
+
+visit(places.kitchen)
+visit(places.door)
+move rover.base to places.dock

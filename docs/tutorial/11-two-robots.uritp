@@ -1,0 +1,8 @@
+# Two robots working at the same time.
+robot big = connect("lab:rover-1")
+robot small = connect("lab:rover-2")
+
+parallel:
+    move big.base to places.kitchen
+    drive small.base forward by 1m
+log "both robots have finished"

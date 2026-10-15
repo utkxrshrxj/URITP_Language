@@ -1,0 +1,6 @@
+# Drive a square: four sides, four turns.
+robot rover = connect("lab:rover-1")
+
+repeat 4 times:
+    drive rover.base forward by 50cm
+    turn rover.base by 90deg

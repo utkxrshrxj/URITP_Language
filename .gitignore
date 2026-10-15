@@ -17,6 +17,9 @@ npm-debug.log*
 .env.*
 !.env.example
 
+# Your own copy of the tutorial's programs (docs/TUTORIAL.md, section 1.4)
+my-tutorial/
+
 # Editor and system files
 .DS_Store
 .vscode/

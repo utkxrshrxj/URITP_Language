@@ -1,0 +1,5 @@
+# Going to the kitchen while keeping out of the stairs.
+robot rover = connect("lab:rover-1")
+
+move rover.base to places.kitchen
+    avoid zones.stairs

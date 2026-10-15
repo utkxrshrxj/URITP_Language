@@ -1,0 +1,8 @@
+# A safety rule is watched the whole time the program runs.
+robot rover = connect("lab:rover-1")
+
+safety:
+    stop rover when rover.battery < 20%
+
+log "battery: {rover.battery}"
+move rover.base to places.kitchen speed 0.3m/s

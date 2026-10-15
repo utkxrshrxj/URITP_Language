@@ -1,0 +1,4 @@
+# Asking for more speed than the robot's safety limit allows.
+robot rover = connect("lab:rover-1")
+
+move rover.base to places.kitchen speed 1m/s

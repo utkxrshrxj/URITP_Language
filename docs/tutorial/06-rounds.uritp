@@ -1,0 +1,7 @@
+# Visit every place on the rounds route and take a photo at each one.
+robot rover = connect("lab:rover-1")
+
+for point in route.rounds:
+    move rover.base to point
+    capture rover.camera save as "{point.name}.jpg"
+move rover.base to places.dock

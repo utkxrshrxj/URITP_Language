@@ -1,0 +1,6 @@
+# This program has three mistakes, on purpose.
+robot rover = connect("lab:rover-1")
+
+drive rover.base forward by 50
+let step = 20cm + 2s
+let step = 30cm

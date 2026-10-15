@@ -1,0 +1,4 @@
+# A misspelled place name.
+robot rover = connect("lab:rover-1")
+
+move rover.base to places.kitchn

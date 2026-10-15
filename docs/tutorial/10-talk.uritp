@@ -1,0 +1,6 @@
+# A rover that tells people what it is doing, in English and in Hindi.
+robot rover = connect("lab:talker-1")
+
+say "Hello! I am going to the kitchen."
+move rover.base to places.kitchen
+say "मैं रसोई में पहुँच गया हूँ" lang hi

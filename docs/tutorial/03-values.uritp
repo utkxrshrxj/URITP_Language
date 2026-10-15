@@ -1,0 +1,8 @@
+# Values always carry their units, and let gives a value a name.
+robot rover = connect("lab:rover-1")
+
+let step = 20cm + 5mm
+let slow = 10cm/s
+log "one step is {step}"
+drive rover.base forward by step speed slow
+drive rover.base backward by step speed slow
