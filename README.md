@@ -11,7 +11,7 @@ robots like an adapter:
    explanation and a suggested fix.
 4. A robot driver carries out the checked instructions.
 
-> **Status:** version 0.1.0. Requests in English, Hindi or Hinglish are
+> **Status:** version 0.1.1. Requests in English, Hindi or Hinglish are
 > translated into URITP, fully checked against the robots' manifests, and run
 > on simulated drivers for Universal Robots, Raspberry Pi and Arduino robots,
 > from a browser demo or the `uritp` command line. All three drivers pass the

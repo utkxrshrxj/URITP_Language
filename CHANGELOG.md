@@ -2,6 +2,45 @@
 
 What changed in each version of URITP, in plain words.
 
+## 0.1.1
+
+Changes from writing programs for the URITP playground's five sandbox worlds,
+where the playground's way was the better one, plus programs and tools for
+the playground. The language version is still URITP 0.1.
+
+### Language
+
+- **`on fail:` can use a task's inputs.** A task's `on fail:` can now use
+  the task's own inputs, and a loop's `on fail:` its loop variable, for
+  example `say "Could not reach {spot.name}"` (DECISIONS.md D42). It still
+  cannot use names the block sets with `let`, since those may never have
+  been set.
+- **Welding needs only `tooling`.** `weld` no longer also needs
+  `manipulation`, as in the Guidebook's table of profiles: a welding arm
+  often has no gripper (D43).
+- **Safety rules may leave out the robot.** `stop when COND` stops every
+  robot; `return_home when COND` and `land [at PLACE] when COND` go to the
+  one robot that can fly; `alert when COND` may leave out its message (D44).
+  The named forms work as before.
+
+### Fixes
+
+- `uritp run` no longer crashes when a robot's forbidden zone is defined in
+  an imported file. The command line now gives drivers the zones from
+  imported files too.
+
+### New
+
+- **`sandboxes/`:** 67 programs for the playground's kitchen, town,
+  warehouse, farm and factory, each checked to do its job on the playground
+  and passing this compiler's checker.
+- **8 `gap-` programs** that need changes to the playground's compiler,
+  with `sandboxes/playground-fixes.patch` making those changes.
+- **Elara translation cases:** 34 requests where the playground's
+  translator writes a program that does not do what was asked, each with a
+  corrected program (`sandboxes/ELARA_TRANSLATION_CASES.md`), and the
+  scripts that check them (`scripts/elara-cases/`).
+
 ## 0.1.0
 
 The first complete version. It implements URITP 0.1 as described in the URITP
