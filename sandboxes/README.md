@@ -65,6 +65,43 @@ One more: the playground's `log "{name}"` writes the braces as they are
 instead of putting the value in. So these programs write `log name, value`,
 which works the same in both.
 
+## Programs the playground cannot run yet
+
+Eight more programs, named `gap-NN-...`, are valid URITP here but fail on
+the playground today. Each one shows a change the playground's compiler
+needs. `playground-fixes.patch` makes all eight changes. With it, all eight
+run to the end, the 65 programs above still meet their goals, and the
+playground's own 127 tests still pass.
+
+| Program | What happens on the playground today | What the patch changes |
+|---|---|---|
+| [`town/gap-01-named-safety-rule.uritp`](town/gap-01-named-safety-rule.uritp) | E101: `stop rover when ...` is refused | `parser.py`: a safety rule may name its robot |
+| [`farm/gap-02-named-return-home.uritp`](farm/gap-02-named-return-home.uritp) | E101: `return_home drone when ...` is refused | `parser.py`, `runtime.py`: the named robot is the one sent home |
+| [`farm/gap-03-land-at-a-place.uritp`](farm/gap-03-land-at-a-place.uritp) | E101: `land drone at places.barn when ...` is refused | `parser.py`, `runtime.py`: `land` rules can say where to land |
+| [`warehouse/gap-04-alert-with-a-message.uritp`](warehouse/gap-04-alert-with-a-message.uritp) | E101: `alert "TEXT" when ...` is refused | `parser.py`, `runtime.py`: an alert rule can carry a message |
+| [`town/gap-05-log-with-values.uritp`](town/gap-05-log-with-values.uritp) | runs, but logs `{spot.name} is {far} from home` as it is | `runtime.py`: `log` fills in `{...}` like `say` does |
+| [`town/gap-06-unit-conversion.uritp`](town/gap-06-unit-conversion.uritp) | E204: `to` is unknown | `checker.py`, `runtime.py`: the built-in `to(QUANTITY, UNIT)` |
+| [`town/gap-07-rounds-until-time.uritp`](town/gap-07-rounds-until-time.uritp) | stops with R708: cannot call `now()` | `checker.py`, `runtime.py`: `now()` with brackets, as the Guidebook writes it |
+| [`town/gap-08-battery-reserve.uritp`](town/gap-08-battery-reserve.uritp) | stops with R302 and a Python error: percents cannot be added | `units.py`: percents can be added and subtracted |
+
+To use the patch, run this in a clone of the playground's repository:
+
+```bash
+git apply ../URITP_Language/sandboxes/playground-fixes.patch
+```
+
+```bash
+python tools/build_playground.py
+```
+
+The second command rebuilds `playground/uritp.zip` and `data.json`, which the
+playground's tests require after any change to `uritp/`.
+
+One more difference does not stop any of these programs, but is worth
+knowing. In the playground's simulator, moving takes no time; only `wait`
+moves its clock on. So a loop that stops when `now()` passes a limit needs a
+`wait` in it there, as `gap-07` has.
+
 ## The programs
 
 ### The kitchen: the robot arm (`play:arm`)

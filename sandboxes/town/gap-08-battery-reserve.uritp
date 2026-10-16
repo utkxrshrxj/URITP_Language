@@ -1,0 +1,12 @@
+# Waits for: adding and subtracting percents, like 20% + 10%. The playground's checker
+# accepts it, but the run stops with R302 and a Python error message.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+let reserve = 20% + 10%
+if rover.battery > reserve:
+    for spot in route.delivery:
+        move rover.base to spot
+    move rover.base to places.home
+else:
+    say "Battery below the reserve. Staying home."

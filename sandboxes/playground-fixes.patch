@@ -1,0 +1,144 @@
+diff --git a/uritp/checker.py b/uritp/checker.py
+index 2ebfa49..3c4f33b 100644
+--- a/uritp/checker.py
++++ b/uritp/checker.py
+@@ -24,7 +24,7 @@ NEEDS = {
+     "Capture": ("vision",),
+ }
+ WORLD_NAMES = {"places", "zones", "route", "field", "shelf", "error", "pose", "polygon",
+-               "now", "len", "round", "text", "native", "distance"}
++               "now", "len", "round", "text", "native", "distance", "to"}
+ # Methods every object, place or pose has (section 6 of the guidebook): never vendor extensions.
+ HELPERS = {"above", "below", "beside", "in_front", "at_height", "offset", "level", "row",
+            "analyse", "has", "sense"}
+@@ -171,6 +171,9 @@ class Checker:
+         elif k == "Safety":
+             for rule in s.rules:
+                 self.expr(rule.cond)
++                for part in (rule.robot, rule.at, rule.text):
++                    if part is not None:
++                        self.expr(part)
+         elif k in ("Let",):
+             self.expr(s.value)
+         elif k in ("Say", "Confirm", "Alert"):
+@@ -426,6 +429,8 @@ class Checker:
+             return "Quantity:" + Quantity.parse(e.number, e.unit).dim
+         if e.kind == "Name" and e.name == "now":
+             return "Quantity:Time"
++        if e.kind == "Call" and e.func.kind == "Name" and e.func.name == "now":
++            return "Quantity:Time"
+         if e.kind == "Call" and e.func.kind == "Name" and e.func.name in ("distance", "round"):
+             return "Quantity:Length" if e.func.name == "distance" else "Number"
+         if e.kind == "Attr":
+diff --git a/uritp/compiler.py b/uritp/compiler.py
+index ddf8a04..25e69cd 100644
+--- a/uritp/compiler.py
++++ b/uritp/compiler.py
+@@ -81,7 +81,7 @@ class Compiler:
+         elif k == "Import":
+             pass                                   # imports are merged before checking
+         elif k == "Safety":
+-            self.emit("SAFETY", rules=[(r.action, r.cond) for r in s.rules], line=line)
++            self.emit("SAFETY", rules=[(r.action, r.cond, r.robot, r.at, r.text) for r in s.rules], line=line)
+         elif k == "If":
+             end = self.new_label("endif")
+             for cond, body in s.branches:
+diff --git a/uritp/parser.py b/uritp/parser.py
+index ea0e91c..4b65b41 100644
+--- a/uritp/parser.py
++++ b/uritp/parser.py
+@@ -372,8 +372,16 @@ class Parser:
+             action = self.name()
+             if action not in ("stop", "return_home", "land", "alert"):
+                 raise URITPError("E101", rline, f"unknown safety action '{action}'")
++            robot = at = text = None
++            if action == "alert" and self.at("STRING"):
++                text = self.expr()                       # alert "TEXT" when COND
++            elif action != "alert" and not self.at_word("when", "at"):
++                robot = self.postfix()                   # stop ROBOT when COND
++            if action == "land" and self.at_word("at"):
++                self.advance()
++                at = self.expr()                         # land [ROBOT] at PLACE when COND
+             self.word("when")
+-            rules.append(Node("SafetyRule", rline, action=action, cond=self.expr()))
++            rules.append(Node("SafetyRule", rline, action=action, cond=self.expr(), robot=robot, at=at, text=text))
+             self.expect("NEWLINE")
+         self.expect("DEDENT")
+         return Node("Safety", line, rules=rules)
+diff --git a/uritp/runtime.py b/uritp/runtime.py
+index 7927f97..778115f 100644
+--- a/uritp/runtime.py
++++ b/uritp/runtime.py
+@@ -7,7 +7,7 @@ from .compiler import expr_text
+ 
+ from .adapters.fake import FakeAdapter
+ from .geometry import Polygon, Pose, plan_path
+-from .units import Percent, Quantity
++from .units import UNITS, Percent, Quantity
+ 
+ # pose helpers that keep a place's position on the floor (they only change the height)
+ SAME_SPOT_HELPERS = ("above", "below", "at_height", "handle", "level")
+@@ -304,7 +304,7 @@ class Runtime:
+         elif op == "ALERT":
+             self.out(f"  [alert] {self.text(ins['text'], env)}")
+         elif op == "LOG":
+-            values = [self.eval(v, env) for v in ins["values"]]
++            values = [self.text(v, env) if v.kind == "Text" else self.eval(v, env) for v in ins["values"]]
+             self.out("  [log] " + ", ".join(_show(v) for v in values))
+         elif op == "WAIT":
+             d = self.eval(ins["duration"], env)
+@@ -452,16 +452,22 @@ class Runtime:
+             raise RuntimeFail("R703", f"{instr['op'].lower()} failed: {result.reason}")
+ 
+     def check_safety(self, env):
+-        for action, cond in self.safety:
++        for action, cond, robot, at, text in self.safety:
+             if self.truth(self.eval(cond, env)):
+                 self.out(f"  ! safety rule triggered -> {action}")
+                 if action == "alert":
++                    if text is not None:
++                        self.out(f"  [alert] {self.text(text, env)}")
+                     continue
++                named = self.eval(robot, env) if robot is not None else None
++                skill = {"op": "SKILL", "name": action}
++                if at is not None:
++                    skill["at"] = self.si(self.eval(at, env))
+                 for r in self.robots.values():
+                     if action == "stop":
+-                        r.adapter.stop()
+-                    else:
+-                        r.adapter.execute({"op": "SKILL", "name": action})
++                        r.adapter.stop()                 # a safety stop stops every robot
++                    elif named is None or r is named:
++                        r.adapter.execute(skill)
+                 raise RuntimeFail("R801", f"safety rule '{action}' triggered")
+ 
+     # ---- expressions ---------------------------------------------------
+@@ -518,6 +524,14 @@ class Runtime:
+             if not result.ok:
+                 raise RuntimeFail("R703", f"native {language} failed: {result.reason}")
+             return None
++        if f.kind == "Name" and f.name == "now" and not args and "now" not in env:
++            return self.eval(f, env)
++        if f.kind == "Name" and f.name == "to":
++            unit = e.args[1].name if len(e.args) == 2 and e.args[1].kind == "Name" else None
++            if not isinstance(args[0], Quantity) or unit not in UNITS or UNITS[unit][0] != args[0].dim:
++                raise RuntimeFail("R302", "to needs an amount and a unit of the same kind, e.g. to(1.2m, cm)")
++            q = args[0]
++            return Quantity(q.si, q.dim, f"{round(q.si / UNITS[unit][1], 4):g}{unit}")
+         if f.kind == "Name" and f.name == "len":
+             return len(list(args[0]))
+         if f.kind == "Name" and f.name == "round":
+diff --git a/uritp/units.py b/uritp/units.py
+index 760f607..b609c5c 100644
+--- a/uritp/units.py
++++ b/uritp/units.py
+@@ -64,6 +64,8 @@ class Percent:
+     def _chk(self, o):
+         if not isinstance(o, Percent):
+             raise TypeError("cannot compare Percent with a non-percentage")
++    def __add__(self, o): self._chk(o); return Percent(self.value + o.value)
++    def __sub__(self, o): self._chk(o); return Percent(self.value - o.value)
+     def __lt__(self, o): self._chk(o); return self.value < o.value
+     def __le__(self, o): self._chk(o); return self.value <= o.value
+     def __gt__(self, o): self._chk(o); return self.value > o.value

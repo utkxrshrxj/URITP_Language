@@ -1,0 +1,9 @@
+# Waits for: values inserted into logged text. The playground logs "{far}" as it is,
+# braces and all, although say fills the same text in.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+for spot in route.delivery:
+    let far = distance(places.home, spot)
+    log "{spot.name} is {far} from home"
+say "Distances logged."

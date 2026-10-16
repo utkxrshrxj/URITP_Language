@@ -1,0 +1,9 @@
+# Waits for: the built-in to(QUANTITY, UNIT), which shows an amount in another unit.
+# The playground does not know to() and refuses the program with E204.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+let far = distance(places.home, places.shop)
+let in_cm = to(far, cm)
+say "The shop is {in_cm} from home."
+move rover.base to places.shop

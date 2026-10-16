@@ -1,0 +1,14 @@
+# Waits for: now() with brackets, as the Guidebook writes it (example iv: "if now() >= 30min:").
+# The playground only knows now without brackets, and stops this program with R708.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+repeat forever:
+    for spot in route.delivery:
+        move rover.base to spot
+    move rover.base to places.home
+    say "Round done. Resting for 10 seconds."
+    wait 10s
+    if now() >= 30s:
+        break
+say "Time is up. Rounds finished."

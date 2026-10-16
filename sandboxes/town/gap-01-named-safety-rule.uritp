@@ -1,0 +1,12 @@
+# Waits for: safety rules that name their robot. The playground refuses "stop rover when"
+# with E101, so a program cannot say which robot a rule is about (DECISIONS.md C9, D44).
+import "town.uritp"
+robot rover = connect("play:rover")
+
+safety:
+    stop rover when rover.battery < 10%
+
+for spot in route.delivery:
+    move rover.base to spot
+    say "{spot.name} delivered"
+move rover.base to places.home

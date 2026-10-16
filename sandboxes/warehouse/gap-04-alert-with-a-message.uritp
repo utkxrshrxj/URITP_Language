@@ -1,0 +1,11 @@
+# Waits for: a safety alert with its own message, so people know what to do.
+# The playground's alert rules take no text, and refuse "alert \"...\" when" with E101.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+safety:
+    alert "Cart battery below half: please send it to the dock soon" when cart.battery < 50%
+
+for spot in route.picking:
+    move cart.base to spot
+move cart.base to places.dock

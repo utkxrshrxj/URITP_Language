@@ -1,5 +1,6 @@
 // Checks every program in sandboxes/ with this URITP's checker, against the playground robots'
-// manifests in sandboxes/robots/, so the programs stay valid here as the language changes.
+// manifests in sandboxes/robots/: the 65 that run on the playground today, and the gap-* ones that
+// need the playground fixes in sandboxes/playground-fixes.patch.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,7 +12,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const WORLDS = ["kitchen", "town", "warehouse", "farm", "factory"];
 const programs = WORLDS.flatMap((world) =>
   readdirSync(join(root, "sandboxes", world))
-    .filter((f) => /^\d\d-.*\.uritp$/.test(f))
+    .filter((f) => /^(gap-)?\d\d-.*\.uritp$/.test(f))
     .map((f) => `sandboxes/${world}/${f}`),
 );
 
@@ -35,8 +36,12 @@ async function check(path: string): Promise<string> {
 }
 
 describe("sandboxes", () => {
+  it("has the eight programs that wait for playground fixes", () => {
+    expect(programs.filter((p) => p.includes("/gap-"))).toHaveLength(8);
+  });
+
   it.each(WORLDS)("has at least ten programs for the %s", (world) => {
-    expect(programs.filter((p) => p.startsWith(`sandboxes/${world}/`)).length).toBeGreaterThanOrEqual(10);
+    expect(programs.filter((p) => p.startsWith(`sandboxes/${world}/`) && !p.includes("/gap-")).length).toBeGreaterThanOrEqual(10);
   });
 
   it.each(programs)("%s passes the checker", async (path) => {

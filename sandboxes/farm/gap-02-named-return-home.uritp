@@ -1,0 +1,13 @@
+# Waits for: "return_home drone when ...", a safety rule naming the robot it sends home.
+# The playground refuses it with E101.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+safety:
+    return_home drone when drone.battery < 25%
+
+takeoff drone to 3m
+for plant in route.row_1:
+    move drone.base to plant.at_height(2m)
+    capture drone.camera save as "{plant.id}.jpg"
+land drone at places.pad

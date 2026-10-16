@@ -1,0 +1,13 @@
+# Waits for: a safety rule that lands at a chosen place, "land drone at places.barn when ...".
+# The playground's safety rules cannot take "at PLACE", and refuse it with E101.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+safety:
+    land drone at places.barn when drone.battery < 20%
+
+takeoff drone to 4m
+for plant in route.all_plants:
+    move drone.base to plant.at_height(3m)
+    spray drone.sprayer on plant amount 10ml
+land drone at places.pad
