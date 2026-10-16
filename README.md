@@ -116,7 +116,7 @@ since a web page must never hold an API key.
 | `drivers/` | `shared/` driver interface, plus one folder per company. |
 | `manifests/` | Robot manifests (capabilities and safety limits), one folder per company, each with its own tests. |
 | `examples/` | Example URITP programs. |
-| `sandboxes/` | 66 programs for the five URITP playground sandboxes, checked on the playground and here. See [sandboxes/README.md](sandboxes/README.md). |
+| `sandboxes/` | 67 programs for the five URITP playground sandboxes, checked on the playground and here, plus 34 corrected Elara requests and 8 programs waiting for playground fixes. See [sandboxes/README.md](sandboxes/README.md). |
 | `conformance/` | Conformance tests from Guidebook section 9.3, run against every driver. See [conformance/README.md](conformance/README.md). |
 | `tests/` | Unit tests (Vitest). |
 | `docs/` | Plain-language guides. |

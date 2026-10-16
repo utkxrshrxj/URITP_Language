@@ -79,7 +79,7 @@ asked. They come from 10 patterns, each with what the translator needs.
 Eight more programs, named `gap-NN-...`, are valid URITP here but fail on
 the playground today. Each one shows a change the playground's compiler
 needs. `playground-fixes.patch` makes all eight changes. With it, all eight
-run to the end, the 66 programs above still meet their goals, and the
+run to the end, the 67 programs above still meet their goals, and the
 playground's own 127 tests still pass.
 
 | Program | What happens on the playground today | What the patch changes |
