@@ -1,0 +1,8 @@
+# Request to Elara: "go to the shop and say how far it is from home"
+# What it asks: Go to the shop and say the distance from home to the shop.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+let far = distance(places.home, places.shop)
+move rover.base to places.shop
+say "The shop is {far} from home."

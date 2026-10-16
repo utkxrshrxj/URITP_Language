@@ -1,0 +1,14 @@
+# Request to Elara: "put the ball on the plate, wait 3 seconds, then put it in the basket"
+# What it asks: The ball on the plate, a 3 second pause, then the ball from the plate into the basket.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+task carry(thing, spot):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to spot.above(10cm)
+    grip arm.gripper open
+
+carry(places.red_ball, places.plate)
+wait 3s
+carry(places.plate, places.basket)

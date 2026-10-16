@@ -1,0 +1,8 @@
+# Request to Elara: "fly to the barn and come back to the pad"
+# What it asks: Fly over the barn, then land back on the pad.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+takeoff drone to 4m
+move drone.base to places.barn.at_height(4m)
+land drone at places.pad

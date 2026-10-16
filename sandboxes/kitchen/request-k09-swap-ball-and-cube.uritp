@@ -1,0 +1,16 @@
+# Request to Elara: "swap the ball and the cube"
+# What it asks: The ball where the cube was, and the cube where the ball was.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+task carry(thing, spot):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to spot.above(10cm)
+    grip arm.gripper open
+
+# The plate is free, so the ball waits there while the cube moves.
+carry(places.red_ball, places.plate)
+carry(places.blue_cube, places.red_ball)
+carry(places.plate, places.blue_cube)
+say "Swapped."

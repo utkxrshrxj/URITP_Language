@@ -1,0 +1,9 @@
+# Request to Elara: "go to every place in town"
+# What it asks: Visit the shop, the school, the post office and the park.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+for spot in [places.shop, places.school, places.post_office, places.park]:
+    move rover.base to spot
+    say "Hello, {spot.name}!"
+move rover.base to places.home

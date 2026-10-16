@@ -1,0 +1,15 @@
+# Request to Elara: "put the cube 10 cm to the left of the ball"
+# What it asks: The cube on the table, 10cm to the left of the ball (as the arm sees it).
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+# The ball is at (0.55m, 0.25m). Seen from the arm, left is +y, so 10cm to its left is y = 0.35m.
+define place left_of_ball = pose(0.55m, 0.35m, 0.04m)
+
+task carry(thing, spot):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to spot.above(10cm)
+    grip arm.gripper open
+
+carry(places.blue_cube, places.left_of_ball)

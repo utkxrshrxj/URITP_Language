@@ -1,0 +1,19 @@
+# Request to Elara: "put the ball, the cube and the cup on the shelf"
+# What it asks: All three things on the shelf, in a row.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+# Three spots in a row along the shelf, 9cm apart.
+define place shelf_left   = pose(-0.5m, 0.09m, 0.12m)
+define place shelf_middle = pose(-0.5m, 0m, 0.12m)
+define place shelf_right  = pose(-0.5m, -0.09m, 0.12m)
+
+task carry(thing, spot):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to spot.above(10cm)
+    grip arm.gripper open
+
+carry(places.red_ball, places.shelf_left)
+carry(places.blue_cube, places.shelf_middle)
+carry(places.cup, places.shelf_right)

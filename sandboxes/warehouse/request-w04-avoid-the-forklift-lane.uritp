@@ -1,0 +1,7 @@
+# Request to Elara: "go to the loading bay but keep out of the forklift lane"
+# What it asks: Go to the loading bay, never entering the forklift lane.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+move cart.base to places.loading
+    avoid zones.forklift

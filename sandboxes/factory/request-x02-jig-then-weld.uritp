@@ -1,0 +1,12 @@
+# Request to Elara: "put the plate in the jig and weld the frame"
+# What it asks: The picker puts the plate in the jig, then the welder welds the frame.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+move picker.tool to places.plate.above(10cm)
+grip picker.gripper close
+move picker.tool to places.jig.above(10cm)
+grip picker.gripper open
+move picker.tool to places.bin.above(20cm)
+weld along route.frame speed 5mm/s current 120A

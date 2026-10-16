@@ -1,0 +1,8 @@
+# Request to Elara: "go to the shop, wait there for 5 seconds, then come home"
+# What it asks: Go to the shop, wait 5 seconds there, then come home.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+move rover.base to places.shop
+wait 5s
+move rover.base to places.home

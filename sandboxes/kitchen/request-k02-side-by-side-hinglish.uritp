@@ -1,0 +1,18 @@
+# Request to Elara: "laal gend ko shelf pe rakho aur neela dabba bhi shelf pe rakho, ek ke upar ek nahi"
+# What it asks: (Hinglish) Put the red ball on the shelf and the blue box on the shelf too, not one on top of the other.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+# Do jagah shelf par, 14cm ki doori par: gend baayen, dabba daayen.
+define place shelf_left  = pose(-0.5m, 0.07m, 0.12m)
+define place shelf_right = pose(-0.5m, -0.07m, 0.12m)
+
+task carry(thing, spot):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to spot.above(10cm)
+    grip arm.gripper open
+
+carry(places.red_ball, places.shelf_left)
+carry(places.blue_cube, places.shelf_right)
+say "गेंद और डिब्बा शेल्फ़ पर, एक-दूसरे के बगल में।" lang hi

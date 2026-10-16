@@ -1,0 +1,14 @@
+# Request to Elara: "put the ball in the basket and say how far it was"
+# What it asks: The ball in the basket, and the robot says how far the ball was from the basket.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+task carry(thing, spot):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to spot.above(10cm)
+    grip arm.gripper open
+
+let far = distance(places.red_ball, places.basket)
+carry(places.red_ball, places.basket)
+say "The ball was {far} from the basket."

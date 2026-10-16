@@ -1,0 +1,17 @@
+# Request to Elara: "put the cup on the shelf and the ball next to it"
+# What it asks: The cup on the shelf, and the ball on the shelf next to the cup.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+# Two spots side by side on the shelf, 12cm apart.
+define place shelf_left  = pose(-0.5m, 0.06m, 0.12m)
+define place shelf_right = pose(-0.5m, -0.06m, 0.12m)
+
+task carry(thing, spot):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to spot.above(10cm)
+    grip arm.gripper open
+
+carry(places.cup, places.shelf_left)
+carry(places.red_ball, places.shelf_right)

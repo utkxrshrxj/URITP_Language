@@ -1,0 +1,7 @@
+# Request to Elara: "go to aisle b and then to packing"
+# What it asks: Go to aisle B, then to the packing table.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+move cart.base to places.aisle_b
+move cart.base to places.packing

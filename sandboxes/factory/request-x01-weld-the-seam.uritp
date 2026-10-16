@@ -1,0 +1,7 @@
+# Request to Elara: "weld the seam"
+# What it asks: Weld along the seam.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+weld along route.seam speed 5mm/s current 120A

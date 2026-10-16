@@ -1,0 +1,17 @@
+# Request to Elara: "put the ball and the cube in the basket"
+# What it asks: Both the ball and the cube in the basket.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+# Two spots in the basket, so the ball and the cube do not land on each other.
+define place basket_left  = pose(0.25m, -0.45m, 0.06m)
+define place basket_right = pose(0.25m, -0.55m, 0.06m)
+
+task carry(thing, spot):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to spot.above(10cm)
+    grip arm.gripper open
+
+carry(places.red_ball, places.basket_left)
+carry(places.blue_cube, places.basket_right)

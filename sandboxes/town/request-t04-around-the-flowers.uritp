@@ -1,0 +1,8 @@
+# Request to Elara: "go to the park without crossing the flowers"
+# What it asks: Go to the park, keeping off the flower bed on the way.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+move rover.base to places.park
+    avoid zones.flowers
+say "At the park, and the flowers are fine."

@@ -1,0 +1,10 @@
+# Request to Elara: "do the delivery round but skip the post office"
+# What it asks: The delivery round, leaving out the post office.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+for spot in route.delivery:
+    if spot.name != "post_office":
+        move rover.base to spot
+        say "Delivery!"
+move rover.base to places.home

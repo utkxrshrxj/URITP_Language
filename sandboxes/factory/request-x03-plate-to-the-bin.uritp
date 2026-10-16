@@ -1,0 +1,10 @@
+# Request to Elara: "move the finished plate to the bin"
+# What it asks: The picker takes the plate and puts it in the bin.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+move picker.tool to places.plate.above(10cm)
+grip picker.gripper close
+move picker.tool to places.bin.above(10cm)
+grip picker.gripper open

@@ -1,0 +1,9 @@
+# Request to Elara: "deliver to the shop and the post office but not the school"
+# What it asks: Deliveries to the shop and the post office only; the rover never goes to the school.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+for spot in [places.shop, places.post_office]:
+    move rover.base to spot
+    say "Delivery for the {spot.name}!"
+move rover.base to places.home

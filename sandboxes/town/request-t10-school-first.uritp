@@ -1,0 +1,8 @@
+# Request to Elara: "deliver to the school first and then to the shop"
+# What it asks: The school first, then the shop.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+for spot in [places.school, places.shop]:
+    move rover.base to spot
+    say "Delivery for the {spot.name}!"

@@ -1,0 +1,14 @@
+# Request to Elara: "put the ball in the basket and then bring it back to where it was"
+# What it asks: The ball goes into the basket, then back to the spot it started from.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+task carry(thing, spot):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to spot.above(10cm)
+    grip arm.gripper open
+
+carry(places.red_ball, places.basket)
+# Pick it up from where it is now (the basket) and put it back where it started.
+carry(places.basket, places.red_ball)

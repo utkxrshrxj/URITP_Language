@@ -1,0 +1,9 @@
+# Request to Elara: "take off, take a photo of plant p1 and land"
+# What it asks: Take off, photograph plant p1 from above, and land.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+takeoff drone to 3m
+move drone.base to places.p1.at_height(2m)
+capture drone.camera save as "p1.jpg"
+land drone at places.pad

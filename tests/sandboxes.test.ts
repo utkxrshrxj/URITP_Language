@@ -1,6 +1,6 @@
 // Checks every program in sandboxes/ with this URITP's checker, against the playground robots'
-// manifests in sandboxes/robots/: the 65 that run on the playground today, and the gap-* ones that
-// need the playground fixes in sandboxes/playground-fixes.patch.
+// manifests in sandboxes/robots/: the ones that run on the playground today, the gap-* ones that need
+// sandboxes/playground-fixes.patch, and the request-* ones from sandboxes/ELARA_TRANSLATION_CASES.md.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,7 +12,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const WORLDS = ["kitchen", "town", "warehouse", "farm", "factory"];
 const programs = WORLDS.flatMap((world) =>
   readdirSync(join(root, "sandboxes", world))
-    .filter((f) => /^(gap-)?\d\d-.*\.uritp$/.test(f))
+    .filter((f) => /^(gap-\d\d|request-[a-z]\d\d|\d\d)-.*\.uritp$/.test(f))
     .map((f) => `sandboxes/${world}/${f}`),
 );
 
@@ -40,8 +40,12 @@ describe("sandboxes", () => {
     expect(programs.filter((p) => p.includes("/gap-"))).toHaveLength(8);
   });
 
+  it("has a corrected program for each of the 34 Elara translation cases", () => {
+    expect(programs.filter((p) => p.includes("/request-"))).toHaveLength(34);
+  });
+
   it.each(WORLDS)("has at least ten programs for the %s", (world) => {
-    expect(programs.filter((p) => p.startsWith(`sandboxes/${world}/`) && !p.includes("/gap-")).length).toBeGreaterThanOrEqual(10);
+    expect(programs.filter((p) => p.startsWith(`sandboxes/${world}/`) && /\/\d\d-/.test(p)).length).toBeGreaterThanOrEqual(10);
   });
 
   it.each(programs)("%s passes the checker", async (path) => {

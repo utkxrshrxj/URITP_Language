@@ -1,0 +1,22 @@
+# Request to Elara: "put only the things that are close to the basket in the basket"
+# What it asks: Only the things less than 1m from the basket (the ball and the cube) in the basket; the cup, 1.12m away, stays.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+define place basket_left  = pose(0.25m, -0.45m, 0.06m)
+define place basket_right = pose(0.25m, -0.55m, 0.06m)
+define place basket_back  = pose(0.31m, -0.50m, 0.06m)
+
+# Carries a thing to its own spot in the basket only if it is less than 1m away.
+task tidy_if_close(thing, spot):
+    if distance(thing, places.basket) < 1m:
+        move arm.tool to thing.above(10cm)
+        grip arm.gripper close
+        move arm.tool to spot.above(10cm)
+        grip arm.gripper open
+    else:
+        say "{thing.name} stays"
+
+tidy_if_close(places.red_ball, places.basket_left)
+tidy_if_close(places.blue_cube, places.basket_right)
+tidy_if_close(places.cup, places.basket_back)

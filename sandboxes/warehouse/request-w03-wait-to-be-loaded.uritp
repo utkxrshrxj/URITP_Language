@@ -1,0 +1,7 @@
+# Request to Elara: "wait until you are loaded, then go to packing"
+# What it asks: Wait for the tray to be loaded, then take the load to packing.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+wait until cart.tray.loaded timeout 10s
+move cart.base to places.packing

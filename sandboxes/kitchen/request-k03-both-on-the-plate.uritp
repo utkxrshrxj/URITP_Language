@@ -1,0 +1,17 @@
+# Request to Elara: "put the cube on the plate, then put the ball on the plate too"
+# What it asks: The cube and the ball both on the plate, both visible.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+# The plate is 22cm across: one spot for each thing, 10cm apart.
+define place plate_near = pose(0.6m, -0.40m, 0.01m)
+define place plate_far  = pose(0.6m, -0.50m, 0.01m)
+
+task carry(thing, spot):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to spot.above(10cm)
+    grip arm.gripper open
+
+carry(places.blue_cube, places.plate_near)
+carry(places.red_ball, places.plate_far)

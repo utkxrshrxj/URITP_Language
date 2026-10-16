@@ -1,0 +1,19 @@
+# Request to Elara: "go to the nearest place"
+# What it asks: Go to whichever place is closest to home (the park, 4.8m away).
+import "town.uritp"
+robot rover = connect("play:rover")
+
+let to_shop = distance(places.home, places.shop)
+let to_school = distance(places.home, places.school)
+let to_post = distance(places.home, places.post_office)
+let to_park = distance(places.home, places.park)
+
+if to_park <= to_shop and to_park <= to_school and to_park <= to_post:
+    move rover.base to places.park
+elif to_post <= to_shop and to_post <= to_school:
+    move rover.base to places.post_office
+elif to_shop <= to_school:
+    move rover.base to places.shop
+else:
+    move rover.base to places.school
+say "This is the nearest place to home."

@@ -1,0 +1,7 @@
+# Request to Elara: "don't go to the school, go to the park"
+# What it asks: Go to the park, and not to the school. ("school mat jao" is Hindi for "don't go to the school".)
+import "town.uritp"
+robot rover = connect("play:rover")
+
+move rover.base to places.park
+say "At the park. I did not go to the school."

@@ -1,0 +1,10 @@
+# Request to Elara: "spray every plant in row 1"
+# What it asks: Spray plants p1, p2 and p3.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+takeoff drone to 3m
+for plant in route.row_1:
+    move drone.base to plant.at_height(2m)
+    spray drone.sprayer on plant amount 20ml
+land drone at places.pad

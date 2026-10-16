@@ -1,0 +1,12 @@
+# Request to Elara: "pick up from aisle c, and if it is blocked use aisle b"
+# What it asks: Try aisle C; if it is blocked (it is, today), go to aisle B instead.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+task fetch():
+    move cart.base to places.aisle_c
+    on fail:
+        say "Aisle C is blocked. Using aisle B."
+        move cart.base to places.aisle_b
+
+fetch()

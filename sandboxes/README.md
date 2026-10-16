@@ -65,6 +65,15 @@ One more: the playground's `log "{name}"` writes the braces as they are
 instead of putting the value in. So these programs write `log name, value`,
 which works the same in both.
 
+## When Elara's translation does not do what was asked
+
+[ELARA_TRANSLATION_CASES.md](ELARA_TRANSLATION_CASES.md) lists 34 requests
+where the playground's built-in translator writes a program that runs but
+does not do what the person asked, like putting two things "side by side" on
+the shelf on exactly the same spot. Each has a corrected program, named
+`request-...` in its world's folder, checked on the playground to do what was
+asked. They come from 10 patterns, each with what the translator needs.
+
 ## Programs the playground cannot run yet
 
 Eight more programs, named `gap-NN-...`, are valid URITP here but fail on
