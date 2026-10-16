@@ -37,7 +37,8 @@ each command in this tutorial and fails if anything changes.
 14. [Flying](#14-flying)
 15. [Several robots at once](#15-several-robots-at-once)
 16. [Bigger programs](#16-bigger-programs)
-17. [From words to programs](#17-from-words-to-programs)
+17. [Coding for the playground sandboxes](#17-coding-for-the-playground-sandboxes)
+18. [From words to programs](#18-from-words-to-programs)
 
 **Part 3: Reference**
 
@@ -2133,7 +2134,380 @@ W602 (line 4): native code works on only one kind of robot, so this program is n
 |---|---|
 | `native` | `native("LANGUAGE", "CODE")` would send code in a robot's own language. It always gets warning W602, because it works on only one kind of robot, and no URITP 0.1 robot accepts it (E405). Use URITP statements or an extension instead. |
 
-## 17. From words to programs
+## 17. Coding for the playground sandboxes
+
+Everything so far works with any robot that has a manifest. This chapter is
+about one particular place to use it: the **URITP playground**, a website
+with five ready-made worlds, each with its own robots, to code in.
+
+### 17.1 What the playground is
+
+The playground is a separate project (github.com/senthuran2107/URITP). It
+runs URITP in your browser, with its own checker, called **ElaraCheck**, and
+draws the robots moving. Its **Sandbox** tab has five worlds:
+
+| World | Robot | What is there |
+|---|---|---|
+| Kitchen | a robot arm | a red ball, a blue cube and a cup; a basket, a plate and a shelf to put them in; a stove and a cat's bed to keep away from |
+| Town | a delivery rover | a home, a shop, a school, a park and a post office; a pond to drive round; a flower bed to keep off |
+| Warehouse | a cart | three aisles between racks, a packing table, a loading bay and an office; a forklift lane |
+| Farm | a drone | six plants in two rows, a pad to take off from, a barn and a pond; beehives it must not fly over |
+| Factory | a welder and a picker | a steel plate, a jig to weld it in, a rack and a bin; seams to weld; a guard zone where people stand |
+
+To code in a sandbox:
+
+1. Open the playground. It is published as a website, or you can run it on
+   your own computer from its project folder with
+   `python tools/playground_dev.py` and open http://localhost:8000/?engine=local.
+2. Tap the **Sandbox** tab, then the world you want.
+3. Replace the starter program in the editor with your own.
+4. Press **▶ Run**. ElaraCheck checks the program first, exactly like `check`
+   in this tutorial. If it finds a problem, it shows the error code and
+   line, and nothing moves. Otherwise the robots move on screen.
+5. **Share** puts your program in a link; **Record** saves a video clip.
+
+### 17.2 How every sandbox program starts
+
+Each world has a map and robots of its own. The first lines of a program say
+which world and which robots, and must be written exactly like this:
+
+| World | First lines |
+|---|---|
+| Kitchen | `import "kitchen.uritp"` and `robot arm = connect("play:arm")` |
+| Town | `import "town.uritp"` and `robot rover = connect("play:rover")` |
+| Warehouse | `import "warehouse.uritp"` and `robot cart = connect("play:cart")` |
+| Farm | `import "farm.uritp"` and `robot drone = connect("play:drone")` |
+| Factory | `import "factory.uritp"`, `robot welder = connect("play:welder")` and `robot picker = connect("play:picker")` |
+
+`import` (chapter 16) brings in the world's map, so `places.shelf` or
+`route.delivery` mean something. The text in `connect` is the address of the
+playground's robot. You may change the names `arm`, `rover` and so on, but
+not the addresses.
+
+### 17.3 Writing code that works in both
+
+The playground's URITP and this project's URITP are two versions of the same
+language, and a few small things differ. Follow these rules and your program
+works in both:
+
+- **Do not use URITP words as names.** The playground lets you write
+  `for stop in route.delivery:`; this URITP does not, because `stop` is one
+  of its words. Write `for spot in route.delivery:`. The words are listed in
+  [A. Every word of URITP](#a-every-word-of-uritp).
+- **Put `on fail:` last in its block.** To protect one risky line, put it in
+  a task with its own `on fail:`, as the warehouse example below does.
+- **To log values, separate them with commas**: `log error.code, error.reason`.
+  The playground does not fill in `{...}` inside `log` text (`say` is fine).
+- **Write safety rules without a robot name**: `stop when ...`,
+  `alert when ...`, `return_home when ...`. The playground does not accept a
+  robot name or an alert message in a rule.
+- **Pick things up with `move` and `grip`**, not `pick` and `place`. In the
+  playground, the things are named in the map (like `places.red_ball`), and
+  `pick` here needs a thing the robot finds with a camera.
+- In the playground, moving takes no time: only `wait` moves the clock on, so
+  `now()` only grows during a `wait`.
+
+### 17.4 Checking a sandbox program here
+
+The folder [sandboxes/](../sandboxes/) has a copy of each world's map and the
+playground robots' manifests, in `sandboxes/robots/`, so you can check a
+program here before pasting it into the playground:
+
+```bash
+npm run uritp -- check sandboxes/kitchen/06-set-the-table.uritp --robot sandboxes/robots/play_arm.uritp
+```
+
+```text
+No problems found.
+```
+
+The copied maps leave out two kinds of line that only the playground knows:
+`define floor` (the area a robot must stay inside) and `define obstacle`
+(things a robot drives round, like the pond and the racks). The playground
+still keeps to them.
+
+### 17.5 The kitchen
+
+The arm stands at `pose(0m, 0m, 0m)` and reaches 0.85m. Its parts are
+`arm.tool` (its hand) and `arm.gripper` (up to 60N). It can also `say`
+things. Its manifest forbids it to enter the stove and the cat's bed. It
+starts with its hand at `pose(0.35m, 0m, 0.3m)`.
+
+<!-- file: sandboxes/kitchen/kitchen.uritp -->
+```uritp
+# Copied from the URITP playground's world (github.com/senthuran2107/URITP, MIT licence).
+# The Kitchen table: the playground arm stands at pose(0m, 0m, 0m).
+# Things start at these places; the arm can reach 0.85m and starts at pose(0.35m, 0m, 0.3m).
+define place red_ball  = pose(0.55m, 0.25m, 0.04m)
+define place blue_cube = pose(0.6m, -0.15m, 0.03m)
+define place cup       = pose(0.05m, 0.6m, 0.05m)
+define place basket    = pose(0.25m, -0.5m, 0.06m)
+define place plate     = pose(0.6m, -0.45m, 0.01m)
+define place shelf     = pose(-0.5m, 0m, 0.12m)
+define place cat_bed   = pose(-0.45m, 0.5m, 0m)
+define place stove     = pose(-0.45m, -0.5m, 0m)
+define zone  cat_bed   = polygon(pose(-0.7m,0.3m,0m), pose(-0.2m,0.3m,0m), pose(-0.2m,0.7m,0m), pose(-0.7m,0.7m,0m))
+define zone  stove     = polygon(pose(-0.7m,-0.7m,0m), pose(-0.2m,-0.7m,0m), pose(-0.2m,-0.3m,0m), pose(-0.7m,-0.3m,0m))
+```
+
+- `places.red_ball`, `places.blue_cube` and `places.cup` are where the three
+  **things** start.
+- The basket, the plate and the shelf are **holders**: a thing let go above
+  one lands in it.
+- `grip arm.gripper close` catches a thing when the hand is just above it
+  (within 8cm to the side). The usual way is `move arm.tool to THING.above(10cm)`
+  first.
+
+<!-- file: sandboxes/kitchen/06-set-the-table.uritp -->
+```uritp
+# Sets the table: the ball in the basket, the cube on the plate, the cup on the shelf.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+task carry(thing, where):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to where.above(10cm)
+    grip arm.gripper open
+    say "{thing.name} done"
+
+carry(places.red_ball, places.basket)
+carry(places.blue_cube, places.plate)
+carry(places.cup, places.shelf)
+```
+
+**Things to try:** `sandboxes/kitchen/` has 14 more kitchen programs, such as
+`15-speed-and-repeat.uritp`, which sets the arm's speed and repeats a task.
+
+### 17.6 The town
+
+The rover starts at home, `pose(1m, 1m, 0m)`, in a town 10m by 7m. Its parts
+are `rover.base` and `rover.tray`. It can `say` things. Its manifest forbids
+the flower bed, and the playground steers it round the pond by itself.
+
+<!-- file: sandboxes/town/town.uritp -->
+```uritp
+# Copied from the URITP playground's world (github.com/senthuran2107/URITP, MIT licence).
+# Left out: its define floor and define obstacle lines, which this URITP does not have yet.
+# The playground still keeps robots off the floor's edge and out of the obstacles.
+# The Town: the playground rover starts at home, pose(1m, 1m, 0m).
+define place home        = pose(1m, 1m, 0m)
+define place shop        = pose(8.6m, 1.2m, 0m)
+define place school      = pose(8.6m, 5.8m, 0m)
+define place park        = pose(1.2m, 5.8m, 0m)
+define place post_office = pose(5m, 6.2m, 0m)
+define zone flowers      = polygon(pose(0.3m,2.6m,0m), pose(2.3m,2.6m,0m), pose(2.3m,4.2m,0m), pose(0.3m,4.2m,0m))
+define route delivery    = [places.shop, places.post_office, places.school]
+```
+
+<!-- file: sandboxes/town/02-delivery-round.uritp -->
+```uritp
+# Delivers to every stop on the delivery route, says so at each, and comes home.
+import "town.uritp"
+robot rover = connect("play:rover")
+
+for spot in route.delivery:
+    move rover.base to spot
+    say "{spot.name} delivered"
+move rover.base to places.home
+```
+
+```bash
+npm run uritp -- check sandboxes/town/02-delivery-round.uritp --robot sandboxes/robots/play_rover.uritp
+```
+
+```text
+No problems found.
+```
+
+**Things to try:** drive a square with `drive` and `turn`, as in chapter 6,
+or visit the park keeping off the flowers with `avoid zones.flowers`.
+
+### 17.7 The warehouse
+
+The cart starts at its dock, `pose(1m, 1m, 0m)`. Its parts are `cart.base`
+and `cart.tray`, and it has a `distance_front` sensor. It can `say` things.
+The racks are obstacles the playground steers round, and the forklift lane
+is a zone you can `avoid`.
+
+The warehouse's simulator does a few things on purpose, so programs can react:
+
+- **Aisle C is blocked today:** every move to `places.aisle_c` fails (R703).
+- **The distance sensor** gives 2.4m, 1.1m, 60cm, 30cm, 12cm, then 1.8m, one
+  reading after another.
+- **The tray** is loaded on the third reading of `cart.tray.loaded`.
+- **The battery** reads 85%, then 70%, 55% and so on, 15% less each time.
+
+<!-- file: sandboxes/warehouse/warehouse.uritp -->
+```uritp
+# Copied from the URITP playground's world (github.com/senthuran2107/URITP, MIT licence).
+# Left out: its define floor and define obstacle lines, which this URITP does not have yet.
+# The playground still keeps robots off the floor's edge and out of the obstacles.
+# The Warehouse: the playground cart starts at its charging dock, pose(1m, 1m, 0m).
+# Racks are obstacles (a floor robot never drives into them); the forklift lane is a zone you can
+# tell a move to avoid. Aisle C is blocked today (the cart's .sim file makes moves there fail).
+define place dock     = pose(1m, 1m, 0m)
+define place packing  = pose(8m, 1m, 0m)
+define place loading  = pose(8m, 5m, 0m)
+define place aisle_a  = pose(2.6m, 4.2m, 0m)
+define place aisle_b  = pose(4.6m, 4.2m, 0m)
+define place aisle_c  = pose(6.6m, 4.2m, 0m)
+define place office   = pose(1m, 5m, 0m)
+define zone forklift  = polygon(pose(4.1m,0m,0m), pose(4.9m,0m,0m), pose(4.9m,1.9m,0m), pose(4.1m,1.9m,0m))
+define route picking  = [places.aisle_a, places.aisle_b, places.packing]
+```
+
+<!-- file: sandboxes/warehouse/05-blocked-aisle.uritp -->
+```uritp
+# Tries aisle C, which is blocked today, and goes to aisle B instead when that fails.
+import "warehouse.uritp"
+robot cart = connect("play:cart")
+
+task fetch_from_c():
+    move cart.base to places.aisle_c
+    say "Got it from aisle C."
+    on fail:
+        log error.code, error.reason
+        say "Aisle C is blocked. Trying aisle B."
+        move cart.base to places.aisle_b
+
+fetch_from_c()
+move cart.base to places.packing
+    avoid zones.forklift
+```
+
+```bash
+npm run uritp -- check sandboxes/warehouse/05-blocked-aisle.uritp --robot sandboxes/robots/play_cart.uritp
+```
+
+```text
+No problems found.
+```
+
+**Things to try:** wait to be loaded with
+`wait until cart.tray.loaded timeout 10s`, then take the load to packing.
+
+### 17.8 The farm
+
+The drone waits on its pad, `pose(1.2m, 1.2m, 0m)`. Its parts are
+`drone.base`, `drone.sprayer` and `drone.camera`, and it has a `height`
+sensor. It can fly, take photos, spray and `say` things. Its manifest
+forbids it to fly over the beehives. The places are on the ground, so fly to
+them with `.at_height(...)`. The battery goes down from 90%, by 5% with
+every reading.
+
+<!-- file: sandboxes/farm/farm.uritp -->
+```uritp
+# Copied from the URITP playground's world (github.com/senthuran2107/URITP, MIT licence).
+# The Farm: the playground drone waits on its pad, pose(1.2m, 1.2m, 0m). Places are on the ground;
+# fly to them with .at_height(...). The beehives are a no-fly zone for the drone.
+define place pad    = pose(1.2m, 1.2m, 0m)
+define place barn   = pose(1.4m, 6.6m, 0m)
+define place pond   = pose(10.6m, 1.6m, 0m)
+define place p1     = pose(4m, 3m, 0m)
+define place p2     = pose(6m, 3m, 0m)
+define place p3     = pose(8m, 3m, 0m)
+define place p4     = pose(4m, 5.6m, 0m)
+define place p5     = pose(6m, 5.6m, 0m)
+define place p6     = pose(8m, 5.6m, 0m)
+define zone beehives = polygon(pose(9.8m,5m,0m), pose(11.6m,5m,0m), pose(11.6m,7.4m,0m), pose(9.8m,7.4m,0m))
+define route row_1  = [places.p1, places.p2, places.p3]
+define route row_2  = [places.p6, places.p5, places.p4]
+define route all_plants = [places.p1, places.p2, places.p3, places.p6, places.p5, places.p4]
+```
+
+<!-- file: sandboxes/farm/05-photo-and-spray.uritp -->
+```uritp
+# For each plant in row 1: a photo first, then 20ml of spray.
+import "farm.uritp"
+robot drone = connect("play:drone")
+
+takeoff drone to 3m
+for plant in route.row_1:
+    move drone.base to plant.at_height(2m)
+    capture drone.camera save as "{plant.id}.jpg"
+    spray drone.sprayer on plant amount 20ml
+land drone at places.pad
+```
+
+```bash
+npm run uritp -- check sandboxes/farm/05-photo-and-spray.uritp --robot sandboxes/robots/play_drone.uritp
+```
+
+```text
+No problems found.
+```
+
+**Things to try:** add `safety:` with `return_home when drone.battery < 25%`,
+and photograph all six plants with `route.all_plants`.
+
+### 17.9 The factory
+
+There are two arms on one bench. The **welder** stands at `pose(-0.55m, 0m, 0m)`.
+Its part is `welder.tool`, it has a `temperature` sensor, it can `weld`, and
+it has the extension `examplecorp.adaptive_weld`. It cannot `say` anything.
+The **picker** stands at `pose(0.7m, 0m, 0m)`. Its parts are `picker.tool`
+and `picker.gripper`, and it can `say` things. Both reach 0.85m, and neither
+may enter the guard zone. The steel plate starts on the rack. The jig, the
+bin and the rack are holders. The welder's temperature reads 24, then 31,
+then 48 degrees Celsius.
+
+<!-- file: sandboxes/factory/factory.uritp -->
+```uritp
+# Copied from the URITP playground's world (github.com/senthuran2107/URITP, MIT licence).
+# The Factory bench: the welder stands at pose(-0.55m, 0m, 0m) and the picker at pose(0.7m, 0m, 0m).
+# Each reaches 0.85m. The seams are where two steel plates meet; the guard zone is where people stand.
+define place rack    = pose(1.2m, 0.45m, 0.02m)
+define place jig     = pose(0.05m, 0m, 0.03m)
+define place bin     = pose(1.25m, -0.45m, 0.05m)
+define place plate   = pose(1.2m, 0.45m, 0.02m)
+define place s1      = pose(-0.12m, -0.12m, 0.04m)
+define place s2      = pose(0.22m, -0.12m, 0.04m)
+define place s3      = pose(0.22m, 0.12m, 0.04m)
+define place s4      = pose(-0.12m, 0.12m, 0.04m)
+define zone  guard   = polygon(pose(-0.4m,0.55m,0m), pose(0.5m,0.55m,0m), pose(0.5m,0.8m,0m), pose(-0.4m,0.8m,0m))
+define route seam    = [places.s1, places.s2]
+define route frame   = [places.s1, places.s2, places.s3, places.s4, places.s1]
+```
+
+<!-- file: sandboxes/factory/07-at-the-same-time.uritp -->
+```uritp
+# Once the plate is in the jig, the welder welds while the picker moves out of the way.
+import "factory.uritp"
+robot welder = connect("play:welder")
+robot picker = connect("play:picker")
+
+move picker.tool to places.plate.above(10cm)
+grip picker.gripper close
+move picker.tool to places.jig.above(10cm)
+grip picker.gripper open
+parallel:
+    weld along route.frame speed 5mm/s current 120A
+    move picker.tool to places.bin.above(10cm)
+say "Done, and nobody waited."
+```
+
+With two robots, give each its manifest by name:
+
+```bash
+npm run uritp -- check sandboxes/factory/07-at-the-same-time.uritp --robot welder=sandboxes/robots/play_welder.uritp --robot picker=sandboxes/robots/play_picker.uritp
+```
+
+```text
+No problems found.
+```
+
+**Things to try:** weld with the welder's own adaptive weld when it has one:
+`if welder.has("examplecorp.adaptive_weld"):`, as in chapter 13.
+
+### 17.10 More sandbox programs
+
+[sandboxes/README.md](../sandboxes/README.md) lists all 67 ready-made
+programs, at least 13 for each world, with one line on what each does. They
+all run in the playground and pass this URITP's checker. Open a file, copy
+it, and paste it into the matching sandbox.
+
+## 18. From words to programs
 
 URITP can also be written by a **translator** from what people say. Someone
 says "rasoi mein jao" ("go to the kitchen" in Hinglish), and a translator
