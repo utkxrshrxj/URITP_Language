@@ -3,7 +3,7 @@
 The [URITP playground](https://github.com/senthuran2107/URITP) has five sandbox
 worlds: a robot arm in the kitchen, a rover in the town, a cart in the
 warehouse, a drone on the farm, and a welder and a picker in the factory.
-This folder has at least 13 programs for each world, 66 in all, written in this
+This folder has at least 13 programs for each world, 67 in all, written in this
 project's URITP.
 
 Every program here was checked both ways:
@@ -131,6 +131,7 @@ moves its clock on. So a loop that stops when `now()` passes a limit needs a
 | [`12-wave-goodbye.uritp`](kitchen/12-wave-goodbye.uritp) | The arm waves over the basket three times and says goodbye. |
 | [`13-safety-rule.uritp`](kitchen/13-safety-rule.uritp) | Tidies the table with a safety rule on watch: the arm stops at once if its battery runs low. |
 | [`14-shelf-side-by-side.uritp`](kitchen/14-shelf-side-by-side.uritp) | Puts the red ball and the blue cube on the shelf side by side, so neither hides the other. |
+| [`15-speed-and-repeat.uritp`](kitchen/15-speed-and-repeat.uritp) | Moves the ball between the basket and the plate again and again, at speeds you choose. |
 
 ### The town: the delivery rover (`play:rover`)
 

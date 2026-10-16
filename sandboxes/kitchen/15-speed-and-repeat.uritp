@@ -1,0 +1,30 @@
+# Moves the ball between the basket and the plate again and again, at speeds you choose.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+# Change these to change how fast the arm moves. The arm's limit is 1m/s.
+let fast = 0.6m/s
+let slow = 0.1m/s
+let rounds = 3
+
+# Carries one thing to one place: quick through the air at `travel`, and gentle near the table.
+task carry(thing, spot, travel):
+    move arm.tool to thing.above(15cm) speed travel
+    move arm.tool to thing.above(8cm) speed slow
+    grip arm.gripper close force 30N
+    move arm.tool to spot.above(15cm) speed travel
+    move arm.tool to spot.above(8cm) speed slow
+    grip arm.gripper open
+
+say "Moving the ball into the basket first."
+carry(places.red_ball, places.basket, fast)
+
+# The same two jobs, again and again.
+repeat rounds times:
+    carry(places.basket, places.plate, fast)
+    carry(places.plate, places.basket, fast)
+    say "One round done."
+
+# One last time, slowly, so you can watch it.
+carry(places.basket, places.plate, slow)
+say "Finished: the ball is on the plate."
