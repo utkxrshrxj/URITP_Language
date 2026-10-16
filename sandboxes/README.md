@@ -3,7 +3,7 @@
 The [URITP playground](https://github.com/senthuran2107/URITP) has five sandbox
 worlds: a robot arm in the kitchen, a rover in the town, a cart in the
 warehouse, a drone on the farm, and a welder and a picker in the factory.
-This folder has 13 programs for each world, 65 in all, written in this
+This folder has at least 13 programs for each world, 66 in all, written in this
 project's URITP.
 
 Every program here was checked both ways:
@@ -70,7 +70,7 @@ which works the same in both.
 Eight more programs, named `gap-NN-...`, are valid URITP here but fail on
 the playground today. Each one shows a change the playground's compiler
 needs. `playground-fixes.patch` makes all eight changes. With it, all eight
-run to the end, the 65 programs above still meet their goals, and the
+run to the end, the 66 programs above still meet their goals, and the
 playground's own 127 tests still pass.
 
 | Program | What happens on the playground today | What the patch changes |
@@ -121,6 +121,7 @@ moves its clock on. So a loop that stops when `now()` passes a limit needs a
 | [`11-with-a-plan-b.uritp`](kitchen/11-with-a-plan-b.uritp) | Tidies the ball, and says so plainly if anything goes wrong on the way. |
 | [`12-wave-goodbye.uritp`](kitchen/12-wave-goodbye.uritp) | The arm waves over the basket three times and says goodbye. |
 | [`13-safety-rule.uritp`](kitchen/13-safety-rule.uritp) | Tidies the table with a safety rule on watch: the arm stops at once if its battery runs low. |
+| [`14-shelf-side-by-side.uritp`](kitchen/14-shelf-side-by-side.uritp) | Puts the red ball and the blue cube on the shelf side by side, so neither hides the other. |
 
 ### The town: the delivery rover (`play:rover`)
 

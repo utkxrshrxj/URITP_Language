@@ -1,0 +1,17 @@
+# Puts the red ball and the blue cube on the shelf side by side, so neither hides the other.
+import "kitchen.uritp"
+robot arm = connect("play:arm")
+
+# Two spots on the shelf, 14cm apart: the ball on the left, the cube on the right.
+define place shelf_left  = pose(-0.5m, 0.07m, 0.12m)
+define place shelf_right = pose(-0.5m, -0.07m, 0.12m)
+
+task carry(thing, spot):
+    move arm.tool to thing.above(10cm)
+    grip arm.gripper close
+    move arm.tool to spot.above(10cm)
+    grip arm.gripper open
+
+carry(places.red_ball, places.shelf_left)
+carry(places.blue_cube, places.shelf_right)
+say "The ball and the cube are on the shelf, side by side."
