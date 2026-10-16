@@ -845,7 +845,10 @@ The program ended: succeeded.
 - The failure was handled, so the program ended as **succeeded**.
 
 A task can have its own `on fail:` as its last lines, so each task can
-recover in its own way.
+recover in its own way. That `on fail:` can use the task's inputs, for
+example `say "I could not reach {spot.name}"` in a task `visit(spot)`. It
+cannot use names the task sets with `let`, because the failure may have
+happened before that line ran.
 
 **Things to try:** make the `on fail:` block go to the kitchen instead.
 
@@ -915,9 +918,17 @@ The safety rule reads it too, before every instruction and every 0.2 seconds
 while the rover drives, but those readings are not shown, so they do not
 bury the program's own steps. The robot still receives them: add
 `--protocol` to see every battery read the driver sends. The simulated
-battery stays at 100%, so the rule never needs to act. A rule always names
-its robot, and can `stop` it, send it home with `return_home`, or raise an
-`alert`.
+battery stays at 100%, so the rule never needs to act.
+
+A rule can `stop` a robot, send a flying robot home with `return_home`, make
+it `land`, or raise an `alert`. It can name its robot, as this one does, or
+leave the robot out:
+
+- `stop when rover.battery < 20%` stops every robot.
+- `return_home when drone.battery < 25%` and `land when ...` go to the one
+  robot that can fly.
+- `alert "Battery low" when rover.battery < 30%` shows that message, and
+  `alert when ...` without a message says which rule it was.
 
 ### 9.3 The robot checks too
 
