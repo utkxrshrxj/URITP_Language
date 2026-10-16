@@ -1,0 +1,4 @@
+# native runs code in a robot's own language. No URITP 0.1 robot accepts it, so this is refused.
+robot rover = connect("lab:rover-1")
+
+native("python", "print('hello')")

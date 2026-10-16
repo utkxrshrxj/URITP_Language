@@ -1,0 +1,7 @@
+# The program stops the rover itself, then carries on with the next line.
+robot rover = connect("lab:rover-1")
+
+drive rover.base forward by 1m
+stop rover
+log "the rover is stopped; the program goes on"
+drive rover.base backward by 1m

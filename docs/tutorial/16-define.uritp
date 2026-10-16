@@ -1,0 +1,9 @@
+# A program can name its own places with define, next to the ones in the site map.
+robot rover = connect("lab:rover-1")
+
+define place printer = pose(1m, 2m, 0m)
+define place window  = pose(3m, 3m, 0m)
+
+for spot in [places.printer, places.window]:
+    move rover.base to spot
+move rover.base to places.dock

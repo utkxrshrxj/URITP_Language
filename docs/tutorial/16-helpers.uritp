@@ -1,0 +1,9 @@
+# Tasks to share between programs. A task file has no robot of its own: robots come in as inputs.
+task wiggle(who, how_many):
+    repeat how_many times:
+        turn who.base by 30deg
+        turn who.base by -30deg
+
+task photo_at(who, spot):
+    move who.base to spot
+    capture who.camera save as "{spot.name}.jpg"

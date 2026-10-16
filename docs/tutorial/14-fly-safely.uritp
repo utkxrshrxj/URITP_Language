@@ -1,0 +1,11 @@
+# The same flight with safety rules that bring the drone home or land it.
+robot drone = connect("lab:drone-1")
+
+safety:
+    return_home drone when drone.battery < 25%
+    land at places.dock when drone.battery < 15%
+
+takeoff drone to 5m
+for point in route.rounds:
+    move drone.base to point.at_height(4m)
+land drone at places.dock

@@ -1,0 +1,7 @@
+# Photos with the camera: one at each end of the office.
+robot rover = connect("lab:rover-1")
+
+move rover.base to places.kitchen
+capture rover.camera save as "kitchen.jpg"
+move rover.base to places.door
+capture rover.camera save as "door.jpg"

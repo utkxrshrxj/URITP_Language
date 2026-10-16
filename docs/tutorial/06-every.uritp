@@ -1,0 +1,7 @@
+# A loop that runs once every second, and stops after about 3 seconds.
+robot rover = connect("lab:rover-1")
+
+repeat every 1s:
+    log "battery", rover.battery
+    if now() >= 3s:
+        break

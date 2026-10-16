@@ -1,0 +1,10 @@
+# Welding a seam: with the arm's own adaptive weld if it has one, plain welding if not.
+robot arm = connect("lab:arm-1")
+
+move arm.tool to places.seam_start.above(5cm)
+if arm.has("examplecorp.adaptive_weld"):
+    examplecorp.adaptive_weld(route.seam, current=120A)
+else:
+    weld along route.seam speed 5mm/s current 120A
+weld along route.seam speed 5mm/s current 100A
+move arm.tool to places.seam_end.above(15cm)

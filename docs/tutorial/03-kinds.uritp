@@ -1,0 +1,10 @@
+# The kinds of values URITP has: amounts with units, plain numbers, percents, text, and true or false.
+robot rover = connect("lab:rover-1")
+
+let step = 50cm
+let laps = 3
+let low_battery = 20%
+let message = "Ready to go"
+let lights_on = true
+let in_a_hurry = false
+log message, step, laps, low_battery, lights_on, in_a_hurry

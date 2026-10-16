@@ -17,7 +17,7 @@ npm-debug.log*
 .env.*
 !.env.example
 
-# Your own copy of the tutorial's programs (docs/TUTORIAL.md, section 1.4)
+# Your own copy of the tutorial's programs (docs/TUTORIAL.md, section 1.6)
 my-tutorial/
 
 # PDF copies of the Markdown files, kept only on this computer

@@ -1,0 +1,8 @@
+# A drone takes off, photographs and sprays the kitchen from above, then lands at the dock.
+robot drone = connect("lab:drone-1")
+
+takeoff drone to 5m
+move drone.base to places.kitchen.at_height(3m)
+capture drone.camera save as "kitchen_from_above.jpg"
+spray drone.sprayer on places.kitchen amount 20ml
+land drone at places.dock

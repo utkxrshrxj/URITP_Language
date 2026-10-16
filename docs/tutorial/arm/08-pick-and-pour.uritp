@@ -1,0 +1,17 @@
+# pick, place and pour work on things the robot finds with its camera. The simulator has none,
+# so each try fails, and on fail says so.
+robot arm = connect("lab:arm-1")
+
+task tidy_cup():
+    pick cup using arm onto arm.tool
+    place cup on places.bin_b using arm.tool
+    on fail:
+        log "no cup: {error.reason}"
+
+task make_tea():
+    pour from kettle into mug until mug.fill >= 80%
+    on fail:
+        log "no tea: {error.reason}"
+
+tidy_cup()
+make_tea()

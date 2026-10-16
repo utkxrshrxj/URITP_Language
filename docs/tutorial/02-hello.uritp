@@ -1,5 +1,6 @@
-# My first URITP program: drive forward a little, then turn left.
+# My first URITP program: drive forward, turn left, then back up a little.
 robot rover = connect("lab:rover-1")
 
 drive rover.base forward by 50cm
 turn rover.base by 90deg
+drive rover.base backward by 20cm

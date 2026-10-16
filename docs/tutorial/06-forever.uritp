@@ -1,0 +1,9 @@
+# A loop with no end of its own: it stops itself with break after 3 seconds.
+robot rover = connect("lab:rover-1")
+
+repeat forever:
+    drive rover.base forward by 20cm
+    drive rover.base backward by 20cm
+    if now() >= 3s:
+        break
+log "done after", now()

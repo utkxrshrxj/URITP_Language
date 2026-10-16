@@ -1,5 +1,8 @@
-# The site map for the arm chapter: two spots on a table, with the tool pointing down
-# (roll=180deg). Illustrative positions only.
+# The site map for the arm chapters: two spots on a table, with the tool pointing down
+# (roll=180deg), and a seam to weld. Illustrative positions only.
 
 define place bin_a = pose(0.4m, 0.1m, 0.05m, roll=180deg)
 define place bin_b = pose(0.3m, -0.3m, 0.05m, roll=180deg)
+define place seam_start = pose(0.5m, -0.1m, 0.02m, roll=180deg)
+define place seam_end   = pose(0.5m, 0.1m, 0.02m, roll=180deg)
+define route seam = [places.seam_start, places.seam_end]

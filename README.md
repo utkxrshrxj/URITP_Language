@@ -66,8 +66,9 @@ understood. Error codes are the same in English and Hindi, and are listed in
 
 ## The language
 
-- [docs/TUTORIAL.md](docs/TUTORIAL.md): a step-by-step tutorial, from a
-  two-line program to several robots at once.
+- [docs/TUTORIAL.md](docs/TUTORIAL.md): a step-by-step tutorial in plain
+  English that explains every word of URITP with a program you can run, and
+  ends with a reference of every word, function, unit and error message.
 - [spec/GRAMMAR.md](spec/GRAMMAR.md): the formal grammar (tokens,
   indentation, every statement, site maps and manifests).
 - [spec/TYPES_AND_UNITS.md](spec/TYPES_AND_UNITS.md): units, types,

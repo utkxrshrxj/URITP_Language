@@ -1,0 +1,9 @@
+# An arm made up for the tutorial: it grips, picks things up, pours and welds.
+manifest "Workshop arm (tutorial)":
+    uritp 0.1
+    frame tool: pose6d reach 0.85m max_speed 1m/s payload 3kg
+    actuator gripper: states [open, closed] max_force 60N
+    sensor camera: rgb
+    profiles [core, manipulation, tooling, vision]
+    extension examplecorp.adaptive_weld(seam: Route, current: Quantity<Current>)
+    safety max_speed 0.5m/s

@@ -1,0 +1,10 @@
+# Combining conditions with and, or and not.
+robot rover = connect("lab:rover-1")
+
+let far = distance(places.dock, places.door)
+let charged = rover.battery > 50%
+log "the door is {far} away; charged: {charged}"
+if charged and far < 5m:
+    move rover.base to places.door
+if not charged or far >= 5m:
+    log "staying at the dock"

@@ -1,0 +1,5 @@
+# The camera rover cannot speak, so a program that uses say is refused for it.
+robot rover = connect("lab:rover-1")
+
+say "Hello!"
+move rover.base to places.kitchen

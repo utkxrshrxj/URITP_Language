@@ -1,5 +1,5 @@
-// Keeps docs/TUTORIAL.md honest: every program it shows must match its file in docs/tutorial/, and
-// every uritp command it shows is run, with its output compared to the output the tutorial prints.
+// Keeps docs/TUTORIAL.md honest and complete: every program it shows matches its file, every command's
+// output matches, and every word and error code of URITP is explained and used in a program.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -8,6 +8,8 @@ import { parseArgs } from "../src/cli/args.js";
 import { runCli } from "../src/cli/cli.js";
 import { realClock } from "../src/runtime/clock.js";
 import type { CreateDriver } from "../drivers/shared/plain-driver.js";
+import { ENGLISH } from "../src/diagnostics/messages-en.js";
+import { KEYWORDS, MANIFEST_KEYWORDS } from "../src/lexer/keywords.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const tutorial = readFileSync(join(root, "docs", "TUTORIAL.md"), "utf8");
@@ -111,3 +113,29 @@ describe("docs/TUTORIAL.md", () => {
     else expect(output).toBe(c.output);
   });
 });
+
+describe("docs/TUTORIAL.md covers the whole language", () => {
+  const [lessons, reference] = tutorial.split("# Part 3: Reference");
+  const programs = readdirSync(join(root, "docs", "tutorial"), { recursive: true, encoding: "utf8" })
+    .filter((f) => f.endsWith(".uritp"))
+    .map((f) => readFileSync(join(root, "docs", "tutorial", f), "utf8").replace(/#.*$/gm, "").replace(/"[^"\n]*"/g, '""'))
+    .join("\n");
+  const words = [...KEYWORDS, ...MANIFEST_KEYWORDS];
+
+  it.each(words)("lists %s in the reference of every word", (word) => {
+    expect(reference).toContain(`| \`${word}\` |`);
+  });
+
+  it.each(words)("explains %s in a New words table in the lessons", (word) => {
+    expect(lessons).toMatch(new RegExp(`\\| \`${word}( fail)?\` \\|`));
+  });
+
+  it.each(words)("uses %s in a tutorial program", (word) => {
+    expect(programs).toMatch(new RegExp(`(^|[^\\w.])${word}([^\\w]|$)`, "m"));
+  });
+
+  it.each(Object.keys(ENGLISH.messages))("explains error %s in the reference", (code) => {
+    expect(reference).toContain(`| ${code} |`);
+  });
+});
+

@@ -1,0 +1,9 @@
+# The gripper, and the helpers that work out a position near a place.
+robot arm = connect("lab:arm-1")
+
+move arm.tool to places.bin_a.above(10cm)
+grip arm.gripper close force 30N
+grip arm.gripper open
+move arm.tool to places.bin_a.offset(0cm, 5cm, 10cm)
+move arm.tool to places.bin_a.at_height(20cm)
+move arm.tool to places.bin_a.above(10cm).below(5cm)

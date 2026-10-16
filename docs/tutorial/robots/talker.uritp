@@ -1,4 +1,4 @@
-# The manifest for a robot made up for this tutorial: a rover that can talk.
+# A rover made up for the tutorial: it can drive and talk.
 manifest "Talking rover (tutorial)":
     uritp 0.1
     frame base: pose2d max_speed 0.5m/s payload 1kg

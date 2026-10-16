@@ -5,5 +5,5 @@ move rover.base to places.landing
     avoid zones.stairs
 log "I am on the landing"
 on fail:
-    log "I could not get there: {error.reason}"
+    log "I could not get there: {error.reason} ({error.code})"
     move rover.base to places.dock

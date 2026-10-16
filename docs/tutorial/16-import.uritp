@@ -1,0 +1,7 @@
+# Uses the tasks in 16-helpers.uritp, brought in with import.
+import "16-helpers.uritp"
+robot rover = connect("lab:rover-1")
+
+photo_at(rover, places.kitchen)
+wiggle(rover, 2)
+photo_at(rover, places.dock)

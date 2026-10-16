@@ -1,0 +1,8 @@
+# Asking people: confirm waits for a yes, and ask waits for an answer.
+robot rover = connect("lab:talker-1")
+
+confirm "Shall I go to the kitchen?"
+move rover.base to places.kitchen
+let dish = ask "What shall I bring back?"
+say "OK, I will bring {dish}."
+move rover.base to places.dock

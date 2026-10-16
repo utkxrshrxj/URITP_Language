@@ -1,0 +1,8 @@
+# Waiting: for a set time, and until something is true.
+robot rover = connect("lab:rover-1")
+
+log "waiting 2 seconds"
+wait 2s
+wait until rover.battery > 50% timeout 10s
+log "the battery is above half, so off we go"
+move rover.base to places.desk

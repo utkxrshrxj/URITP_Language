@@ -1,0 +1,12 @@
+# A task can work something out and give it back with return.
+robot rover = connect("lab:rover-1")
+
+task farther(a, b):
+    if distance(places.dock, a) > distance(places.dock, b):
+        return a
+    else:
+        return b
+
+let goal = farther(places.kitchen, places.desk)
+log "the farther place is", goal.name
+move rover.base to goal

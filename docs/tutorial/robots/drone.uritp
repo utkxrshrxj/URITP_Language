@@ -1,0 +1,10 @@
+# A drone made up for the tutorial: it flies, takes photos and sprays.
+manifest "Field drone (tutorial)":
+    uritp 0.1
+    frame base: pose3d max_speed 3m/s
+    actuator sprayer: states [off, on]
+    sensor camera: rgb
+    sensor height: range dimension Length
+    profiles [core, flight, vision, tooling]
+    safety max_speed 2m/s
+    safety forbidden_zone zones.stairs

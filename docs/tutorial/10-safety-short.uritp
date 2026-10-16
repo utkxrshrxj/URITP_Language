@@ -1,0 +1,11 @@
+# Safety rules that leave out the robot, and alerts with and without a message.
+robot rover = connect("lab:rover-1")
+
+safety:
+    stop when rover.battery < 10%
+    alert "Battery below half: time to charge soon" when rover.battery < 50%
+    alert when rover.sense("distance_front").value < 10cm
+
+for point in route.rounds:
+    move rover.base to point
+move rover.base to places.dock
